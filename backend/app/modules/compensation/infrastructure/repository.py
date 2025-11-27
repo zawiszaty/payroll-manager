@@ -1,25 +1,27 @@
-from typing import Optional, List
-from uuid import UUID
 from datetime import date
-from sqlalchemy import select, and_
+from typing import List, Optional
+from uuid import UUID
+
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.modules.compensation.domain.models import Rate, Bonus, Deduction, Overtime, SickLeave
+
+from app.modules.compensation.domain.models import Bonus, Deduction, Overtime, Rate, SickLeave
 from app.modules.compensation.domain.repository import (
-    RateRepository,
     BonusRepository,
     DeductionRepository,
     OvertimeRepository,
+    RateRepository,
     SickLeaveRepository,
 )
 from app.modules.compensation.domain.value_objects import OvertimeRule, SickLeaveRule
-from app.shared.domain.value_objects import DateRange, Money
 from app.modules.compensation.infrastructure.models import (
-    RateORM,
     BonusORM,
     DeductionORM,
     OvertimeORM,
+    RateORM,
     SickLeaveORM,
 )
+from app.shared.domain.value_objects import DateRange, Money
 
 
 class SQLAlchemyRateRepository(RateRepository):

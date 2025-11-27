@@ -1,9 +1,9 @@
-import pytest
-from datetime import date
 from decimal import Decimal
 from uuid import uuid4
 
-from app.modules.compensation.domain.value_objects import RateType, BonusType
+import pytest
+
+from app.modules.compensation.domain.value_objects import BonusType, RateType
 
 
 @pytest.mark.asyncio

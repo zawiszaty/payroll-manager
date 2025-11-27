@@ -2,12 +2,13 @@ from datetime import date
 from decimal import Decimal
 from typing import Optional
 from uuid import UUID
-from app.modules.compensation.domain.models import Rate, Bonus, Deduction, Overtime, SickLeave
+
+from app.modules.compensation.domain.models import Bonus, Deduction, Overtime, Rate, SickLeave
 from app.modules.compensation.domain.value_objects import (
-    RateType,
     BonusType,
     DeductionType,
     OvertimeRule,
+    RateType,
     SickLeaveRule,
 )
 from app.shared.domain.value_objects import DateRange, Money

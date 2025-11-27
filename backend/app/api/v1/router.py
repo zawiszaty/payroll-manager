@@ -1,8 +1,8 @@
 from fastapi import APIRouter
 
-from app.modules.employee.api.endpoints import router as employee_router
-from app.modules.contract.api.endpoints import router as contract_router
 from app.modules.compensation.api.endpoints import router as compensation_router
+from app.modules.contract.api.endpoints import router as contract_router
+from app.modules.employee.api.endpoints import router as employee_router
 
 api_router = APIRouter()
 api_router.include_router(employee_router, prefix="/employees", tags=["employees"])

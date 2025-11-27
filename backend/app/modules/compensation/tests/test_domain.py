@@ -1,14 +1,15 @@
-import pytest
 from datetime import date
 from decimal import Decimal
 from uuid import uuid4
 
-from app.modules.compensation.domain.models import Rate, Bonus, Deduction, Overtime, SickLeave
+import pytest
+
+from app.modules.compensation.domain.models import Bonus, Deduction, Overtime, Rate, SickLeave
 from app.modules.compensation.domain.value_objects import (
-    RateType,
     BonusType,
     DeductionType,
     OvertimeRule,
+    RateType,
     SickLeaveRule,
 )
 from app.shared.domain.value_objects import DateRange, Money

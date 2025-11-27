@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Optional, List
-from uuid import UUID
 from datetime import date
-from app.modules.compensation.domain.models import Rate, Bonus, Deduction, Overtime, SickLeave
+from typing import List, Optional
+from uuid import UUID
+
+from app.modules.compensation.domain.models import Bonus, Deduction, Overtime, Rate, SickLeave
 
 
 class RateRepository(ABC):

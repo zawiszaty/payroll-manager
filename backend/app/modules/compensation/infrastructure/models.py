@@ -1,9 +1,12 @@
-from sqlalchemy import Column, String, Date, DateTime, Integer, Enum as SQLEnum, Numeric, Text
+import uuid
+
+from sqlalchemy import Column, Date, DateTime, Integer, Numeric, String, Text
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
-import uuid
+
 from app.database import Base
-from app.modules.compensation.domain.value_objects import RateType, BonusType, DeductionType
+from app.modules.compensation.domain.value_objects import BonusType, DeductionType, RateType
 
 
 class RateORM(Base):

@@ -1,37 +1,38 @@
-from typing import List
-from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
 from datetime import date
 from decimal import Decimal
+from typing import List
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.modules.compensation.domain.value_objects import RateType, BonusType
-from app.modules.compensation.infrastructure.repository import (
-    SQLAlchemyRateRepository,
-    SQLAlchemyBonusRepository,
-)
-from app.modules.compensation.application.commands import CreateRateCommand, CreateBonusCommand
-from app.modules.compensation.application.queries import (
-    GetRateQuery,
-    GetRatesByEmployeeQuery,
-    GetActiveRateQuery,
-    ListRatesQuery,
-    GetBonusQuery,
-    GetBonusesByEmployeeQuery,
-    ListBonusesQuery,
-)
+from app.modules.compensation.application.commands import CreateBonusCommand, CreateRateCommand
 from app.modules.compensation.application.handlers import (
+    CreateBonusHandler,
     CreateRateHandler,
+    GetActiveRateHandler,
+    GetBonusesByEmployeeHandler,
+    GetBonusHandler,
     GetRateHandler,
     GetRatesByEmployeeHandler,
-    GetActiveRateHandler,
-    ListRatesHandler,
-    CreateBonusHandler,
-    GetBonusHandler,
-    GetBonusesByEmployeeHandler,
     ListBonusesHandler,
+    ListRatesHandler,
+)
+from app.modules.compensation.application.queries import (
+    GetActiveRateQuery,
+    GetBonusesByEmployeeQuery,
+    GetBonusQuery,
+    GetRateQuery,
+    GetRatesByEmployeeQuery,
+    ListBonusesQuery,
+    ListRatesQuery,
+)
+from app.modules.compensation.domain.value_objects import BonusType, RateType
+from app.modules.compensation.infrastructure.repository import (
+    SQLAlchemyBonusRepository,
+    SQLAlchemyRateRepository,
 )
 
 router = APIRouter()

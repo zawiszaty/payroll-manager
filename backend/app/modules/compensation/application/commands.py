@@ -3,7 +3,8 @@ from datetime import date
 from decimal import Decimal
 from typing import Optional
 from uuid import UUID
-from app.modules.compensation.domain.value_objects import RateType, BonusType, DeductionType
+
+from app.modules.compensation.domain.value_objects import BonusType, DeductionType, RateType
 
 
 @dataclass

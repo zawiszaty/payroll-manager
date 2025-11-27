@@ -1,39 +1,39 @@
 from typing import List, Optional
-from app.modules.compensation.domain.models import Rate, Bonus, Deduction, Overtime, SickLeave
-from app.modules.compensation.domain.repository import (
-    RateRepository,
-    BonusRepository,
-    DeductionRepository,
-    OvertimeRepository,
-    SickLeaveRepository,
-)
-from app.modules.compensation.domain.services import (
-    CreateRateService,
-    CreateBonusService,
-    CreateDeductionService,
-    CreateOvertimeService,
-    CreateSickLeaveService,
-)
+
 from app.modules.compensation.application.commands import (
-    CreateRateCommand,
     CreateBonusCommand,
     CreateDeductionCommand,
     CreateOvertimeCommand,
+    CreateRateCommand,
     CreateSickLeaveCommand,
 )
 from app.modules.compensation.application.queries import (
+    GetActiveDeductionsQuery,
+    GetActiveRateQuery,
+    GetBonusesByEmployeeQuery,
+    GetBonusQuery,
+    GetDeductionsByEmployeeQuery,
+    GetOvertimeByEmployeeQuery,
     GetRateQuery,
     GetRatesByEmployeeQuery,
-    GetActiveRateQuery,
-    ListRatesQuery,
-    GetBonusQuery,
-    GetBonusesByEmployeeQuery,
-    ListBonusesQuery,
-    GetDeductionQuery,
-    GetDeductionsByEmployeeQuery,
-    GetActiveDeductionsQuery,
-    GetOvertimeByEmployeeQuery,
     GetSickLeaveByEmployeeQuery,
+    ListBonusesQuery,
+    ListRatesQuery,
+)
+from app.modules.compensation.domain.models import Bonus, Deduction, Overtime, Rate, SickLeave
+from app.modules.compensation.domain.repository import (
+    BonusRepository,
+    DeductionRepository,
+    OvertimeRepository,
+    RateRepository,
+    SickLeaveRepository,
+)
+from app.modules.compensation.domain.services import (
+    CreateBonusService,
+    CreateDeductionService,
+    CreateOvertimeService,
+    CreateRateService,
+    CreateSickLeaveService,
 )
 
 

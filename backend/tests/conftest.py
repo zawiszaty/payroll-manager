@@ -8,8 +8,8 @@ from app.main import app
 
 @pytest_asyncio.fixture
 async def test_engine():
-    TEST_DATABASE_URL = "postgresql+asyncpg://payroll_user:payroll_pass@postgres:5432/payroll_db_test"
-    engine = create_async_engine(TEST_DATABASE_URL, echo=True)
+    test_database_url = "postgresql+asyncpg://payroll_user:payroll_pass@postgres:5432/payroll_db_test"
+    engine = create_async_engine(test_database_url, echo=True)
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
