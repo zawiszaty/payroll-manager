@@ -1,0 +1,61 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+
+      - name: Create .env file
+        run: cp .env.example .env
+
+      - name: Build Docker images
+        run: task build
+
+      - name: Start services
+        run: task up
+
+      - name: Wait for services to be ready
+        run: |
+          echo "Waiting for PostgreSQL to be ready..."
+          timeout 60 bash -c 'until docker compose exec -T postgres pg_isready -U payroll_user; do sleep 2; done'
+          echo "PostgreSQL is ready!"
+
+          echo "Waiting for backend to be ready..."
+          timeout 60 bash -c 'until curl -sf http://localhost:8000/health > /dev/null; do sleep 2; done'
+          echo "Backend is ready!"
+
+      - name: Run all tests
+        run: task test
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: ./backend/htmlcov/coverage.xml
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Show Docker logs on failure
+        if: failure()
+        run: task logs
+
+      - name: Cleanup
+        if: always()
+        run: task down-volumes
