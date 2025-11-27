@@ -1,0 +1,171 @@
+version: '3'
+
+tasks:
+  up:
+    desc: Start all services
+    cmds:
+      - docker compose up -d
+
+  down:
+    desc: Stop all services
+    cmds:
+      - docker compose down
+
+  down-volumes:
+    desc: Stop all services and remove volumes
+    cmds:
+      - docker compose down -v
+
+  build:
+    desc: Build all services
+    cmds:
+      - docker compose build
+
+  rebuild:
+    desc: Rebuild and start all services
+    cmds:
+      - docker compose up -d --build
+
+  logs:
+    desc: Show logs from all services
+    cmds:
+      - docker compose logs -f
+
+  logs-backend:
+    desc: Show logs from backend service
+    cmds:
+      - docker compose logs -f backend
+
+  shell:
+    desc: Open shell in backend container
+    cmds:
+      - docker compose exec backend bash
+
+  db-shell:
+    desc: Open PostgreSQL shell
+    cmds:
+      - docker compose exec postgres psql -U payroll_user -d payroll_db
+
+  migrate:
+    desc: Run database migrations
+    cmds:
+      - docker compose exec backend alembic upgrade head
+
+  migrate-create:
+    desc: Create new migration
+    cmds:
+      - docker compose exec backend alembic revision --autogenerate -m "{{.CLI_ARGS}}"
+
+  migrate-downgrade:
+    desc: Downgrade one migration
+    cmds:
+      - docker compose exec backend alembic downgrade -1
+
+  test:
+    desc: Run all tests
+    cmds:
+      - docker compose exec backend pytest app/ -v
+
+  test-employee:
+    desc: Run employee module tests
+    cmds:
+      - docker compose exec backend pytest app/modules/employee/tests/ -v
+
+  test-contract:
+    desc: Run contract module tests
+    cmds:
+      - docker compose exec backend pytest app/modules/contract/tests/ -v
+
+  test-compensation:
+    desc: Run compensation module tests
+    cmds:
+      - docker compose exec backend pytest app/modules/compensation/tests/ -v
+
+  test-coverage:
+    desc: Run tests with coverage report
+    cmds:
+      - docker compose exec backend pytest app/ --cov=app --cov-report=html --cov-report=term
+
+  test-watch:
+    desc: Run tests in watch mode
+    cmds:
+      - docker compose exec backend pytest-watch app/ -v
+
+  lint:
+    desc: Run linting with ruff
+    cmds:
+      - docker compose exec backend ruff check app/
+
+  lint-fix:
+    desc: Run linting and auto-fix
+    cmds:
+      - docker compose exec backend ruff check --fix app/
+
+  format:
+    desc: Format code
+    cmds:
+      - docker compose exec backend ruff format app/
+
+  format-check:
+    desc: Check formatting
+    cmds:
+      - docker compose exec backend ruff format --check app/
+
+  type-check:
+    desc: Run type checking
+    cmds:
+      - docker compose exec backend mypy app/
+
+  clean:
+    desc: Clean Python cache files
+    cmds:
+      - "find backend -type d -name '__pycache__' -exec rm -rf {} +"
+      - "find backend -type f -name '*.pyc' -delete"
+      - "find backend -type d -name '.pytest_cache' -exec rm -rf {} +"
+
+  reset-db:
+    desc: Reset database (drop volumes, restart)
+    cmds:
+      - docker compose down -v
+      - docker compose up -d postgres
+      - sleep 3
+      - docker compose up -d backend
+
+  restart:
+    desc: Restart all services
+    cmds:
+      - docker compose restart
+
+  restart-backend:
+    desc: Restart backend
+    cmds:
+      - docker compose restart backend
+
+  ps:
+    desc: Show running containers
+    cmds:
+      - docker compose ps
+
+  health:
+    desc: Check health of all services
+    cmds:
+      - curl -s http://localhost:8000/health | jq .
+      - "echo 'RabbitMQ Management: http://localhost:15672'"
+      - "echo 'PostgreSQL: localhost:5432'"
+      - "echo 'Redis: localhost:6379'"
+
+  api-docs:
+    desc: Open API documentation
+    cmds:
+      - "echo 'Opening API docs at http://localhost:8000/docs'"
+      - "xdg-open http://localhost:8000/docs 2>/dev/null || open http://localhost:8000/docs 2>/dev/null || echo 'Please open http://localhost:8000/docs manually'"
+
+  install-task:
+    desc: Install Taskfile globally
+    cmds:
+      - sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b ~/.local/bin
+
+  help:
+    desc: Show help
+    cmds:
+      - task --list

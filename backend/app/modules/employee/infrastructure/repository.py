@@ -1,0 +1,158 @@
+from typing import List, Optional
+from uuid import UUID
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from app.modules.employee.domain.models import Employee
+from app.modules.employee.domain.repository import EmployeeRepository
+from app.modules.employee.domain.value_objects import EmploymentStatus
+from app.modules.employee.infrastructure.models import EmployeeORM, EmploymentStatusORM
+from app.shared.domain.value_objects import DateRange
+
+
+class SQLAlchemyEmployeeRepository(EmployeeRepository):
+    def __init__(self, session: AsyncSession):
+        self.session = session
+
+    def _to_domain(self, orm: EmployeeORM) -> Employee:
+        statuses = [
+            EmploymentStatus(
+                status_type=s.status_type,
+                date_range=DateRange(valid_from=s.valid_from, valid_to=s.valid_to),
+                reason=s.reason,
+            )
+            for s in orm.statuses
+        ]
+
+        return Employee(
+            id=orm.id,
+            first_name=orm.first_name,
+            last_name=orm.last_name,
+            email=orm.email,
+            phone=orm.phone,
+            date_of_birth=orm.date_of_birth,
+            hire_date=orm.hire_date,
+            statuses=statuses,
+            created_at=orm.created_at.date() if orm.created_at else None,
+            updated_at=orm.updated_at.date() if orm.updated_at else None,
+        )
+
+    def _to_orm(self, employee: Employee) -> EmployeeORM:
+        orm = EmployeeORM(
+            id=employee.id,
+            first_name=employee.first_name,
+            last_name=employee.last_name,
+            email=employee.email,
+            phone=employee.phone,
+            date_of_birth=employee.date_of_birth,
+            hire_date=employee.hire_date,
+        )
+
+        orm.statuses = [
+            EmploymentStatusORM(
+                status_type=s.status_type,
+                valid_from=s.date_range.valid_from,
+                valid_to=s.date_range.valid_to,
+                reason=s.reason,
+            )
+            for s in employee.statuses
+        ]
+
+        return orm
+
+    async def add(self, employee: Employee) -> Employee:
+        orm = self._to_orm(employee)
+        self.session.add(orm)
+        await self.session.flush()
+        await self.session.refresh(orm, ["statuses"])
+        return self._to_domain(orm)
+
+    async def get_by_id(self, employee_id: UUID) -> Optional[Employee]:
+        stmt = (
+            select(EmployeeORM)
+            .options(selectinload(EmployeeORM.statuses))
+            .where(EmployeeORM.id == employee_id)
+        )
+        result = await self.session.execute(stmt)
+        orm = result.scalar_one_or_none()
+        return self._to_domain(orm) if orm else None
+
+    async def get_by_email(self, email: str) -> Optional[Employee]:
+        stmt = (
+            select(EmployeeORM)
+            .options(selectinload(EmployeeORM.statuses))
+            .where(EmployeeORM.email == email)
+        )
+        result = await self.session.execute(stmt)
+        orm = result.scalar_one_or_none()
+        return self._to_domain(orm) if orm else None
+
+    async def list(self, skip: int = 0, limit: int = 100) -> List[Employee]:
+        stmt = (
+            select(EmployeeORM)
+            .options(selectinload(EmployeeORM.statuses))
+            .offset(skip)
+            .limit(limit)
+        )
+        result = await self.session.execute(stmt)
+        orms = result.scalars().all()
+        return [self._to_domain(orm) for orm in orms]
+
+    async def update(self, employee: Employee) -> Employee:
+        from sqlalchemy import delete as sql_delete
+
+        stmt = select(EmployeeORM).where(EmployeeORM.id == employee.id)
+        result = await self.session.execute(stmt)
+        orm = result.scalar_one_or_none()
+
+        if not orm:
+            raise ValueError(f"Employee {employee.id} not found")
+
+        orm.first_name = employee.first_name
+        orm.last_name = employee.last_name
+        orm.email = employee.email
+        orm.phone = employee.phone
+        orm.date_of_birth = employee.date_of_birth
+        orm.hire_date = employee.hire_date
+
+        await self.session.flush()
+
+        delete_stmt = sql_delete(EmploymentStatusORM).where(
+            EmploymentStatusORM.employee_id == employee.id
+        )
+        await self.session.execute(delete_stmt)
+
+        for status in employee.statuses:
+            status_orm = EmploymentStatusORM(
+                employee_id=employee.id,
+                status_type=status.status_type,
+                valid_from=status.date_range.valid_from,
+                valid_to=status.date_range.valid_to,
+                reason=status.reason,
+            )
+            self.session.add(status_orm)
+
+        await self.session.flush()
+
+        stmt = (
+            select(EmployeeORM)
+            .options(selectinload(EmployeeORM.statuses))
+            .where(EmployeeORM.id == employee.id)
+        )
+        result = await self.session.execute(stmt)
+        orm = result.scalar_one_or_none()
+
+        return self._to_domain(orm)
+
+    async def delete(self, employee_id: UUID) -> bool:
+        stmt = select(EmployeeORM).where(EmployeeORM.id == employee_id)
+        result = await self.session.execute(stmt)
+        orm = result.scalar_one_or_none()
+
+        if not orm:
+            return False
+
+        await self.session.delete(orm)
+        return True
