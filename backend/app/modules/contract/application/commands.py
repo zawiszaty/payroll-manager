@@ -3,6 +3,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Optional
 from uuid import UUID
+
 from app.modules.contract.domain.value_objects import ContractType
 
 

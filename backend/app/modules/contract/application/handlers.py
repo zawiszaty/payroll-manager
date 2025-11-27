@@ -1,23 +1,24 @@
 from typing import List, Optional
-from app.modules.contract.domain.models import Contract
-from app.modules.contract.domain.repository import ContractRepository
-from app.modules.contract.domain.services import (
-    CreateContractService,
-    ActivateContractService,
-    CancelContractService,
-    ExpireContractService,
-)
+
 from app.modules.contract.application.commands import (
-    CreateContractCommand,
     ActivateContractCommand,
     CancelContractCommand,
+    CreateContractCommand,
     ExpireContractCommand,
 )
 from app.modules.contract.application.queries import (
+    GetActiveContractsQuery,
     GetContractQuery,
     GetContractsByEmployeeQuery,
-    GetActiveContractsQuery,
     ListContractsQuery,
+)
+from app.modules.contract.domain.models import Contract
+from app.modules.contract.domain.repository import ContractRepository
+from app.modules.contract.domain.services import (
+    ActivateContractService,
+    CancelContractService,
+    CreateContractService,
+    ExpireContractService,
 )
 
 

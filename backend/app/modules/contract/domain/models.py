@@ -1,8 +1,9 @@
 from dataclasses import dataclass, field
 from datetime import date
-from typing import Optional, List
+from typing import Optional
 from uuid import UUID, uuid4
-from app.modules.contract.domain.value_objects import ContractTerms, ContractStatus, ContractType
+
+from app.modules.contract.domain.value_objects import ContractStatus, ContractTerms
 
 
 @dataclass

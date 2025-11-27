@@ -1,13 +1,14 @@
-from typing import Optional, List
+from typing import List, Optional
 from uuid import UUID
-from datetime import date
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.modules.contract.domain.models import Contract
 from app.modules.contract.domain.repository import ContractRepository
-from app.modules.contract.domain.value_objects import ContractTerms, ContractStatus
-from app.shared.domain.value_objects import DateRange, Money
+from app.modules.contract.domain.value_objects import ContractStatus, ContractTerms
 from app.modules.contract.infrastructure.models import ContractORM
+from app.shared.domain.value_objects import DateRange, Money
 
 
 class SQLAlchemyContractRepository(ContractRepository):

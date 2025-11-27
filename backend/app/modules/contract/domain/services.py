@@ -2,8 +2,9 @@ from datetime import date
 from decimal import Decimal
 from typing import Optional
 from uuid import UUID
+
 from app.modules.contract.domain.models import Contract
-from app.modules.contract.domain.value_objects import ContractTerms, ContractStatus, ContractType
+from app.modules.contract.domain.value_objects import ContractStatus, ContractTerms, ContractType
 from app.shared.domain.value_objects import DateRange, Money
 
 

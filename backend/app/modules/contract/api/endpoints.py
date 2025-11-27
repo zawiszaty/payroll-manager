@@ -1,36 +1,37 @@
-from typing import List
-from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
 from datetime import date
 from decimal import Decimal
+from typing import List
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.modules.contract.domain.value_objects import ContractType, ContractStatus
-from app.modules.contract.infrastructure.repository import SQLAlchemyContractRepository
 from app.modules.contract.application.commands import (
-    CreateContractCommand,
     ActivateContractCommand,
     CancelContractCommand,
+    CreateContractCommand,
     ExpireContractCommand,
 )
-from app.modules.contract.application.queries import (
-    GetContractQuery,
-    GetContractsByEmployeeQuery,
-    GetActiveContractsQuery,
-    ListContractsQuery,
-)
 from app.modules.contract.application.handlers import (
-    CreateContractHandler,
     ActivateContractHandler,
     CancelContractHandler,
+    CreateContractHandler,
     ExpireContractHandler,
+    GetActiveContractsHandler,
     GetContractHandler,
     GetContractsByEmployeeHandler,
-    GetActiveContractsHandler,
     ListContractsHandler,
 )
+from app.modules.contract.application.queries import (
+    GetActiveContractsQuery,
+    GetContractQuery,
+    GetContractsByEmployeeQuery,
+    ListContractsQuery,
+)
+from app.modules.contract.domain.value_objects import ContractStatus, ContractType
+from app.modules.contract.infrastructure.repository import SQLAlchemyContractRepository
 
 router = APIRouter()
 

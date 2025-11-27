@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Optional, List
+from typing import List, Optional
 from uuid import UUID
-from datetime import date
+
 from app.modules.contract.domain.models import Contract
 
 

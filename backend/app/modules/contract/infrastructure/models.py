@@ -1,10 +1,12 @@
-from sqlalchemy import Column, String, Date, DateTime, Integer, Enum as SQLEnum, Numeric, ForeignKey, Text
+import uuid
+
+from sqlalchemy import Column, Date, DateTime, Integer, Numeric, String, Text
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
-import uuid
+
 from app.database import Base
-from app.modules.contract.domain.value_objects import ContractType, ContractStatus
+from app.modules.contract.domain.value_objects import ContractStatus, ContractType
 
 
 class ContractORM(Base):

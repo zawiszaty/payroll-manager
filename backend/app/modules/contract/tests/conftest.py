@@ -1,15 +1,15 @@
-import pytest
 import pytest_asyncio
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
 from app.database import Base, get_db
 from app.main import app
 
 
 @pytest_asyncio.fixture
 async def test_engine():
-    TEST_DATABASE_URL = "postgresql+asyncpg://payroll_user:payroll_pass@postgres:5432/payroll_db_test"
-    engine = create_async_engine(TEST_DATABASE_URL, echo=True)
+    test_database_url = "postgresql+asyncpg://payroll_user:payroll_pass@postgres:5432/payroll_db_test"
+    engine = create_async_engine(test_database_url, echo=True)
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
