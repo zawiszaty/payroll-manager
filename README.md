@@ -1,5 +1,7 @@
 # Payroll Manager
 
+[![codecov](https://codecov.io/gh/zawiszaty/payroll-manager/graph/badge.svg?token=AI8Z9KRF3R)](https://codecov.io/gh/zawiszaty/payroll-manager)
+
 A comprehensive payroll management system built with Domain-Driven Design (DDD) architecture, featuring modular bounded contexts for employee management, contracts, compensation, and more.
 
 ## Overview
