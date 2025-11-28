@@ -61,8 +61,17 @@ tasks:
     cmds:
       - docker compose exec backend alembic downgrade -1
 
+  test-setup:
+    desc: Setup test database and check migrations
+    cmds:
+      - docker compose exec -T postgres psql -U payroll_user -d payroll_db -c "DROP DATABASE IF EXISTS payroll_db_test;"
+      - docker compose exec -T postgres psql -U payroll_user -d payroll_db -c "CREATE DATABASE payroll_db_test;"
+      - docker compose exec backend alembic current
+      - docker compose exec backend alembic check
+
   test:
     desc: Run all tests
+    deps: [test-setup]
     cmds:
       - docker compose exec backend pytest app/ -v
 

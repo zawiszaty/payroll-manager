@@ -44,17 +44,13 @@ jobs:
       - name: Run all tests
         run: task test
 
-      - name: Upload coverage reports
-        uses: codecov/codecov-action@v4
-        if: always()
-        with:
-          files: ./backend/htmlcov/coverage.xml
-          fail_ci_if_error: false
-          token: ${{ secrets.CODECOV_TOKEN }}
-
-      - name: Show Docker logs on failure
+      - name: Show Docker logs
         if: failure()
-        run: task logs
+        run: |
+          echo "=== PostgreSQL logs ==="
+          docker compose logs postgres
+          echo "=== Backend logs ==="
+          docker compose logs backend
 
       - name: Cleanup
         if: always()
