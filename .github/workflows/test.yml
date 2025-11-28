@@ -25,6 +25,9 @@ jobs:
       - name: Create .env file
         run: cp .env.example .env
 
+      - name: Ensure entrypoint.sh has execute permissions
+        run: chmod +x backend/entrypoint.sh
+
       - name: Build Docker images
         run: task build
 
