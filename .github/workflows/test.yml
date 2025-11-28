@@ -44,6 +44,17 @@ jobs:
       - name: Run all tests
         run: task test
 
+      - name: Run tests with coverage
+        run: task test-coverage
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: ./backend/htmlcov/coverage.xml
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
       - name: Show Docker logs
         if: failure()
         run: |
