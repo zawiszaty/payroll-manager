@@ -69,7 +69,11 @@ class SQLAlchemyContractRepository(ContractRepository):
         return self._to_domain(orm) if orm else None
 
     async def get_by_employee_id(self, employee_id: UUID) -> List[Contract]:
-        stmt = select(ContractORM).where(ContractORM.employee_id == employee_id).order_by(ContractORM.created_at.desc())
+        stmt = (
+            select(ContractORM)
+            .where(ContractORM.employee_id == employee_id)
+            .order_by(ContractORM.created_at.desc())
+        )
         result = await self.session.execute(stmt)
         orms = result.scalars().all()
         return [self._to_domain(orm) for orm in orms]

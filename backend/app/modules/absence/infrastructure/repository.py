@@ -145,16 +145,12 @@ class SQLAlchemyAbsenceBalanceRepository(AbsenceBalanceRepository):
 
     async def get_by_employee(self, employee_id: UUID) -> List[AbsenceBalance]:
         result = await self.session.execute(
-            select(AbsenceBalanceModel).where(
-                AbsenceBalanceModel.employee_id == employee_id
-            )
+            select(AbsenceBalanceModel).where(AbsenceBalanceModel.employee_id == employee_id)
         )
         models = result.scalars().all()
         return [self._to_domain(model) for model in models]
 
-    async def get_by_employee_and_year(
-        self, employee_id: UUID, year: int
-    ) -> List[AbsenceBalance]:
+    async def get_by_employee_and_year(self, employee_id: UUID, year: int) -> List[AbsenceBalance]:
         result = await self.session.execute(
             select(AbsenceBalanceModel).where(
                 and_(

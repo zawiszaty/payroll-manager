@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from app.modules.employee.application.commands import (
     ChangeEmployeeStatusCommand,
@@ -13,6 +13,7 @@ from app.modules.employee.application.queries import (
 from app.modules.employee.domain.models import Employee
 from app.modules.employee.domain.repository import EmployeeRepository
 from app.modules.employee.domain.services import ChangeEmployeeStatusService, CreateEmployeeService
+from app.modules.employee.infrastructure.read_model import EmployeeReadModel
 
 
 class CreateEmployeeHandler:
@@ -87,19 +88,19 @@ class ChangeEmployeeStatusHandler:
 
 
 class GetEmployeeHandler:
-    def __init__(self, repository: EmployeeRepository):
-        self.repository = repository
+    def __init__(self, read_model: EmployeeReadModel):
+        self.read_model = read_model
 
-    async def handle(self, query: GetEmployeeQuery) -> Optional[Employee]:
-        return await self.repository.get_by_id(query.employee_id)
+    async def handle(self, query: GetEmployeeQuery):
+        return await self.read_model.get_by_id(query.employee_id)
 
 
 class ListEmployeesHandler:
-    def __init__(self, repository: EmployeeRepository):
-        self.repository = repository
+    def __init__(self, read_model: EmployeeReadModel):
+        self.read_model = read_model
 
-    async def handle(self, query: ListEmployeesQuery) -> List[Employee]:
-        return await self.repository.list(skip=query.skip, limit=query.limit)
+    async def handle(self, query: ListEmployeesQuery):
+        return await self.read_model.list(skip=query.skip, limit=query.limit)
 
 
 class GetEmployeeByEmailHandler:

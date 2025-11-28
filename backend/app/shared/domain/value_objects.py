@@ -3,13 +3,45 @@ from datetime import date
 from decimal import Decimal
 from typing import Optional
 
-
 SUPPORTED_CURRENCIES = {
-    "USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD",
-    "SEK", "NOK", "DKK", "PLN", "CZK", "HUF", "RON", "BGN",
-    "HRK", "RSD", "UAH", "RUB", "TRY", "ILS", "ZAR", "INR",
-    "CNY", "KRW", "THB", "MYR", "SGD", "IDR", "PHP", "VND",
-    "BRL", "MXN", "ARS", "CLP", "COP", "PEN"
+    "USD",
+    "EUR",
+    "GBP",
+    "JPY",
+    "CHF",
+    "CAD",
+    "AUD",
+    "NZD",
+    "SEK",
+    "NOK",
+    "DKK",
+    "PLN",
+    "CZK",
+    "HUF",
+    "RON",
+    "BGN",
+    "HRK",
+    "RSD",
+    "UAH",
+    "RUB",
+    "TRY",
+    "ILS",
+    "ZAR",
+    "INR",
+    "CNY",
+    "KRW",
+    "THB",
+    "MYR",
+    "SGD",
+    "IDR",
+    "PHP",
+    "VND",
+    "BRL",
+    "MXN",
+    "ARS",
+    "CLP",
+    "COP",
+    "PEN",
 }
 
 
@@ -59,7 +91,7 @@ class Money:
         if self.currency not in SUPPORTED_CURRENCIES:
             raise ValueError(f"Unsupported currency: {self.currency}")
 
-        object.__setattr__(self, 'amount', Decimal(str(self.amount)))
+        object.__setattr__(self, "amount", Decimal(str(self.amount)))
 
     def __add__(self, other: "Money") -> "Money":
         if not isinstance(other, Money):

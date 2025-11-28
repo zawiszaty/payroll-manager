@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.modules.compensation.api.views import BonusView, RateView
 from app.modules.compensation.application.commands import CreateBonusCommand, CreateRateCommand
 from app.modules.compensation.application.handlers import (
     CreateBonusHandler,
@@ -30,23 +31,13 @@ from app.modules.compensation.application.queries import (
     ListRatesQuery,
 )
 from app.modules.compensation.domain.value_objects import BonusType, RateType
+from app.modules.compensation.infrastructure.read_model import BonusReadModel, RateReadModel
 from app.modules.compensation.infrastructure.repository import (
     SQLAlchemyBonusRepository,
     SQLAlchemyRateRepository,
 )
 
 router = APIRouter()
-
-
-class RateResponse(BaseModel):
-    id: UUID
-    employee_id: UUID
-    rate_type: RateType
-    amount: Decimal
-    currency: str
-    valid_from: date
-    valid_to: date | None
-    description: str | None
 
 
 class CreateRateRequest(BaseModel):
@@ -59,16 +50,6 @@ class CreateRateRequest(BaseModel):
     description: str | None = None
 
 
-class BonusResponse(BaseModel):
-    id: UUID
-    employee_id: UUID
-    bonus_type: BonusType
-    amount: Decimal
-    currency: str
-    payment_date: date
-    description: str | None
-
-
 class CreateBonusRequest(BaseModel):
     employee_id: UUID
     bonus_type: BonusType
@@ -78,32 +59,7 @@ class CreateBonusRequest(BaseModel):
     description: str | None = None
 
 
-def rate_to_response(rate) -> RateResponse:
-    return RateResponse(
-        id=rate.id,
-        employee_id=rate.employee_id,
-        rate_type=rate.rate_type,
-        amount=rate.amount.amount,
-        currency=rate.amount.currency,
-        valid_from=rate.date_range.valid_from,
-        valid_to=rate.date_range.valid_to,
-        description=rate.description,
-    )
-
-
-def bonus_to_response(bonus) -> BonusResponse:
-    return BonusResponse(
-        id=bonus.id,
-        employee_id=bonus.employee_id,
-        bonus_type=bonus.bonus_type,
-        amount=bonus.amount.amount,
-        currency=bonus.amount.currency,
-        payment_date=bonus.payment_date,
-        description=bonus.description,
-    )
-
-
-@router.post("/rates/", response_model=RateResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/rates/", response_model=RateView, status_code=status.HTTP_201_CREATED)
 async def create_rate(request: CreateRateRequest, db: AsyncSession = Depends(get_db)):
     repository = SQLAlchemyRateRepository(db)
     handler = CreateRateHandler(repository)
@@ -121,16 +77,19 @@ async def create_rate(request: CreateRateRequest, db: AsyncSession = Depends(get
     try:
         rate = await handler.handle(command)
         await db.commit()
-        return rate_to_response(rate)
+        # Fetch from ReadModel after write
+        read_model = RateReadModel(db)
+        view = await read_model.get_by_id(rate.id)
+        return view
     except ValueError as e:
         await db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.get("/rates/{rate_id}", response_model=RateResponse)
+@router.get("/rates/{rate_id}", response_model=RateView)
 async def get_rate(rate_id: UUID, db: AsyncSession = Depends(get_db)):
-    repository = SQLAlchemyRateRepository(db)
-    handler = GetRateHandler(repository)
+    read_model = RateReadModel(db)
+    handler = GetRateHandler(read_model)
 
     query = GetRateQuery(rate_id=rate_id)
     rate = await handler.handle(query)
@@ -138,35 +97,37 @@ async def get_rate(rate_id: UUID, db: AsyncSession = Depends(get_db)):
     if not rate:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Rate not found")
 
-    return rate_to_response(rate)
+    return rate
 
 
-@router.get("/rates/", response_model=List[RateResponse])
+@router.get("/rates/", response_model=List[RateView])
 async def list_rates(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)):
-    repository = SQLAlchemyRateRepository(db)
-    handler = ListRatesHandler(repository)
+    read_model = RateReadModel(db)
+    handler = ListRatesHandler(read_model)
 
     query = ListRatesQuery(skip=skip, limit=limit)
     rates = await handler.handle(query)
 
-    return [rate_to_response(rate) for rate in rates]
+    return rates
 
 
-@router.get("/rates/employee/{employee_id}", response_model=List[RateResponse])
+@router.get("/rates/employee/{employee_id}", response_model=List[RateView])
 async def get_rates_by_employee(employee_id: UUID, db: AsyncSession = Depends(get_db)):
-    repository = SQLAlchemyRateRepository(db)
-    handler = GetRatesByEmployeeHandler(repository)
+    read_model = RateReadModel(db)
+    handler = GetRatesByEmployeeHandler(read_model)
 
     query = GetRatesByEmployeeQuery(employee_id=employee_id)
     rates = await handler.handle(query)
 
-    return [rate_to_response(rate) for rate in rates]
+    return rates
 
 
-@router.get("/rates/employee/{employee_id}/active", response_model=RateResponse)
-async def get_active_rate(employee_id: UUID, check_date: date = date.today(), db: AsyncSession = Depends(get_db)):
-    repository = SQLAlchemyRateRepository(db)
-    handler = GetActiveRateHandler(repository)
+@router.get("/rates/employee/{employee_id}/active", response_model=RateView)
+async def get_active_rate(
+    employee_id: UUID, check_date: date = date.today(), db: AsyncSession = Depends(get_db)
+):
+    read_model = RateReadModel(db)
+    handler = GetActiveRateHandler(read_model)
 
     query = GetActiveRateQuery(employee_id=employee_id, check_date=check_date)
     rate = await handler.handle(query)
@@ -174,10 +135,10 @@ async def get_active_rate(employee_id: UUID, check_date: date = date.today(), db
     if not rate:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No active rate found")
 
-    return rate_to_response(rate)
+    return rate
 
 
-@router.post("/bonuses/", response_model=BonusResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/bonuses/", response_model=BonusView, status_code=status.HTTP_201_CREATED)
 async def create_bonus(request: CreateBonusRequest, db: AsyncSession = Depends(get_db)):
     repository = SQLAlchemyBonusRepository(db)
     handler = CreateBonusHandler(repository)
@@ -194,16 +155,19 @@ async def create_bonus(request: CreateBonusRequest, db: AsyncSession = Depends(g
     try:
         bonus = await handler.handle(command)
         await db.commit()
-        return bonus_to_response(bonus)
+        # Fetch from ReadModel after write
+        read_model = BonusReadModel(db)
+        view = await read_model.get_by_id(bonus.id)
+        return view
     except ValueError as e:
         await db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.get("/bonuses/{bonus_id}", response_model=BonusResponse)
+@router.get("/bonuses/{bonus_id}", response_model=BonusView)
 async def get_bonus(bonus_id: UUID, db: AsyncSession = Depends(get_db)):
-    repository = SQLAlchemyBonusRepository(db)
-    handler = GetBonusHandler(repository)
+    read_model = BonusReadModel(db)
+    handler = GetBonusHandler(read_model)
 
     query = GetBonusQuery(bonus_id=bonus_id)
     bonus = await handler.handle(query)
@@ -211,26 +175,26 @@ async def get_bonus(bonus_id: UUID, db: AsyncSession = Depends(get_db)):
     if not bonus:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bonus not found")
 
-    return bonus_to_response(bonus)
+    return bonus
 
 
-@router.get("/bonuses/", response_model=List[BonusResponse])
+@router.get("/bonuses/", response_model=List[BonusView])
 async def list_bonuses(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)):
-    repository = SQLAlchemyBonusRepository(db)
-    handler = ListBonusesHandler(repository)
+    read_model = BonusReadModel(db)
+    handler = ListBonusesHandler(read_model)
 
     query = ListBonusesQuery(skip=skip, limit=limit)
     bonuses = await handler.handle(query)
 
-    return [bonus_to_response(bonus) for bonus in bonuses]
+    return bonuses
 
 
-@router.get("/bonuses/employee/{employee_id}", response_model=List[BonusResponse])
+@router.get("/bonuses/employee/{employee_id}", response_model=List[BonusView])
 async def get_bonuses_by_employee(employee_id: UUID, db: AsyncSession = Depends(get_db)):
-    repository = SQLAlchemyBonusRepository(db)
-    handler = GetBonusesByEmployeeHandler(repository)
+    read_model = BonusReadModel(db)
+    handler = GetBonusesByEmployeeHandler(read_model)
 
     query = GetBonusesByEmployeeQuery(employee_id=employee_id)
     bonuses = await handler.handle(query)
 
-    return [bonus_to_response(bonus) for bonus in bonuses]
+    return bonuses

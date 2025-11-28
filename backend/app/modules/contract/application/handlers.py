@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from app.modules.contract.application.commands import (
     ActivateContractCommand,
     CancelContractCommand,
@@ -20,6 +18,7 @@ from app.modules.contract.domain.services import (
     CreateContractService,
     ExpireContractService,
 )
+from app.modules.contract.infrastructure.read_model import ContractReadModel
 
 
 class CreateContractHandler:
@@ -86,32 +85,32 @@ class ExpireContractHandler:
 
 
 class GetContractHandler:
-    def __init__(self, repository: ContractRepository):
-        self.repository = repository
+    def __init__(self, read_model: ContractReadModel):
+        self.read_model = read_model
 
-    async def handle(self, query: GetContractQuery) -> Optional[Contract]:
-        return await self.repository.get_by_id(query.contract_id)
+    async def handle(self, query: GetContractQuery):
+        return await self.read_model.get_by_id(query.contract_id)
 
 
 class GetContractsByEmployeeHandler:
-    def __init__(self, repository: ContractRepository):
-        self.repository = repository
+    def __init__(self, read_model: ContractReadModel):
+        self.read_model = read_model
 
-    async def handle(self, query: GetContractsByEmployeeQuery) -> List[Contract]:
-        return await self.repository.get_by_employee_id(query.employee_id)
+    async def handle(self, query: GetContractsByEmployeeQuery):
+        return await self.read_model.get_by_employee(query.employee_id)
 
 
 class GetActiveContractsHandler:
-    def __init__(self, repository: ContractRepository):
-        self.repository = repository
+    def __init__(self, read_model: ContractReadModel):
+        self.read_model = read_model
 
-    async def handle(self, query: GetActiveContractsQuery) -> List[Contract]:
-        return await self.repository.get_active_contracts(query.employee_id)
+    async def handle(self, query: GetActiveContractsQuery):
+        return await self.read_model.get_active_by_employee(query.employee_id)
 
 
 class ListContractsHandler:
-    def __init__(self, repository: ContractRepository):
-        self.repository = repository
+    def __init__(self, read_model: ContractReadModel):
+        self.read_model = read_model
 
-    async def handle(self, query: ListContractsQuery) -> List[Contract]:
-        return await self.repository.list(skip=query.skip, limit=query.limit)
+    async def handle(self, query: ListContractsQuery):
+        return await self.read_model.list(skip=query.skip, limit=query.limit)

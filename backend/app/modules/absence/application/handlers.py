@@ -207,9 +207,7 @@ class GetAbsencesByEmployeeAndStatusHandler:
     def __init__(self, absence_repository: AbsenceRepository):
         self.absence_repository = absence_repository
 
-    async def handle(
-        self, query: GetAbsencesByEmployeeAndStatusQuery
-    ) -> List[Absence]:
+    async def handle(self, query: GetAbsencesByEmployeeAndStatusQuery) -> List[Absence]:
         return await self.absence_repository.get_by_employee_and_status(
             query.employee_id, query.status
         )
@@ -238,9 +236,7 @@ class GetAbsenceBalancesByEmployeeHandler:
     def __init__(self, balance_repository: AbsenceBalanceRepository):
         self.balance_repository = balance_repository
 
-    async def handle(
-        self, query: GetAbsenceBalancesByEmployeeQuery
-    ) -> List[AbsenceBalance]:
+    async def handle(self, query: GetAbsenceBalancesByEmployeeQuery) -> List[AbsenceBalance]:
         return await self.balance_repository.get_by_employee(query.employee_id)
 
 
@@ -248,9 +244,5 @@ class GetAbsenceBalancesByEmployeeAndYearHandler:
     def __init__(self, balance_repository: AbsenceBalanceRepository):
         self.balance_repository = balance_repository
 
-    async def handle(
-        self, query: GetAbsenceBalancesByEmployeeAndYearQuery
-    ) -> List[AbsenceBalance]:
-        return await self.balance_repository.get_by_employee_and_year(
-            query.employee_id, query.year
-        )
+    async def handle(self, query: GetAbsenceBalancesByEmployeeAndYearQuery) -> List[AbsenceBalance]:
+        return await self.balance_repository.get_by_employee_and_year(query.employee_id, query.year)

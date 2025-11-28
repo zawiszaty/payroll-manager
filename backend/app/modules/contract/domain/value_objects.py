@@ -38,4 +38,6 @@ class ContractTerms:
 
         if self.contract_type == ContractType.COMMISSION_BASED:
             if self.commission_percentage is None or self.commission_percentage <= 0:
-                raise ValueError("Commission-based contracts must specify positive commission_percentage")
+                raise ValueError(
+                    "Commission-based contracts must specify positive commission_percentage"
+                )

@@ -2,8 +2,6 @@ from dataclasses import dataclass
 from decimal import Decimal
 from enum import Enum
 
-from app.shared.domain.value_objects import DateRange
-
 
 class AbsenceType(str, Enum):
     VACATION = "vacation"

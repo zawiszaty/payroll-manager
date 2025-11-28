@@ -8,7 +8,9 @@ from app.main import app
 
 @pytest_asyncio.fixture
 async def test_engine():
-    test_database_url = "postgresql+asyncpg://payroll_user:payroll_pass@postgres:5432/payroll_db_test"
+    test_database_url = (
+        "postgresql+asyncpg://payroll_user:payroll_pass@postgres:5432/payroll_db_test"
+    )
     engine = create_async_engine(test_database_url, echo=True)
 
     async with engine.begin() as conn:
@@ -24,9 +26,7 @@ async def test_engine():
 
 @pytest_asyncio.fixture
 async def test_session(test_engine):
-    async_session = async_sessionmaker(
-        test_engine, class_=AsyncSession, expire_on_commit=False
-    )
+    async_session = async_sessionmaker(test_engine, class_=AsyncSession, expire_on_commit=False)
     async with async_session() as session:
         yield session
 

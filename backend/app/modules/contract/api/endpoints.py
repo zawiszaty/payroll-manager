@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.modules.contract.api.views import ContractDetailView, ContractListView
 from app.modules.contract.application.commands import (
     ActivateContractCommand,
     CancelContractCommand,
@@ -30,31 +31,11 @@ from app.modules.contract.application.queries import (
     GetContractsByEmployeeQuery,
     ListContractsQuery,
 )
-from app.modules.contract.domain.value_objects import ContractStatus, ContractType
+from app.modules.contract.domain.value_objects import ContractType
+from app.modules.contract.infrastructure.read_model import ContractReadModel
 from app.modules.contract.infrastructure.repository import SQLAlchemyContractRepository
 
 router = APIRouter()
-
-
-class ContractTermsResponse(BaseModel):
-    contract_type: ContractType
-    rate_amount: Decimal
-    rate_currency: str
-    valid_from: date
-    valid_to: date | None
-    hours_per_week: int | None
-    commission_percentage: Decimal | None
-    description: str | None
-
-
-class ContractResponse(BaseModel):
-    id: UUID
-    employee_id: UUID
-    terms: ContractTermsResponse
-    status: ContractStatus
-    version: int
-    cancellation_reason: str | None
-    canceled_at: date | None
 
 
 class CreateContractRequest(BaseModel):
@@ -77,28 +58,7 @@ class CancelContractRequest(BaseModel):
     reason: str
 
 
-def to_response(contract) -> ContractResponse:
-    return ContractResponse(
-        id=contract.id,
-        employee_id=contract.employee_id,
-        terms=ContractTermsResponse(
-            contract_type=contract.terms.contract_type,
-            rate_amount=contract.terms.rate.amount,
-            rate_currency=contract.terms.rate.currency,
-            valid_from=contract.terms.date_range.valid_from,
-            valid_to=contract.terms.date_range.valid_to,
-            hours_per_week=contract.terms.hours_per_week,
-            commission_percentage=contract.terms.commission_percentage,
-            description=contract.terms.description,
-        ),
-        status=contract.status,
-        version=contract.version,
-        cancellation_reason=contract.cancellation_reason,
-        canceled_at=contract.canceled_at,
-    )
-
-
-@router.post("/", response_model=ContractResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=ContractDetailView, status_code=status.HTTP_201_CREATED)
 async def create_contract(request: CreateContractRequest, db: AsyncSession = Depends(get_db)):
     repository = SQLAlchemyContractRepository(db)
     handler = CreateContractHandler(repository)
@@ -118,60 +78,63 @@ async def create_contract(request: CreateContractRequest, db: AsyncSession = Dep
     try:
         contract = await handler.handle(command)
         await db.commit()
-        return to_response(contract)
+        # Fetch from ReadModel after write
+        read_model = ContractReadModel(db)
+        view = await read_model.get_by_id(contract.id)
+        return view
     except ValueError as e:
         await db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.get("/{contract_id}", response_model=ContractResponse)
+@router.get("/{contract_id}", response_model=ContractDetailView)
 async def get_contract(contract_id: UUID, db: AsyncSession = Depends(get_db)):
-    repository = SQLAlchemyContractRepository(db)
-    handler = GetContractHandler(repository)
+    read_model = ContractReadModel(db)
+    handler = GetContractHandler(read_model)
 
     query = GetContractQuery(contract_id=contract_id)
-    contract = await handler.handle(query)
+    view = await handler.handle(query)
 
-    if not contract:
+    if not view:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Contract not found")
 
-    return to_response(contract)
+    return view
 
 
-@router.get("/", response_model=List[ContractResponse])
+@router.get("/", response_model=List[ContractListView])
 async def list_contracts(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)):
-    repository = SQLAlchemyContractRepository(db)
-    handler = ListContractsHandler(repository)
+    read_model = ContractReadModel(db)
+    handler = ListContractsHandler(read_model)
 
     query = ListContractsQuery(skip=skip, limit=limit)
-    contracts = await handler.handle(query)
+    views = await handler.handle(query)
 
-    return [to_response(contract) for contract in contracts]
+    return views
 
 
-@router.get("/employee/{employee_id}", response_model=List[ContractResponse])
+@router.get("/employee/{employee_id}", response_model=List[ContractListView])
 async def get_contracts_by_employee(employee_id: UUID, db: AsyncSession = Depends(get_db)):
-    repository = SQLAlchemyContractRepository(db)
-    handler = GetContractsByEmployeeHandler(repository)
+    read_model = ContractReadModel(db)
+    handler = GetContractsByEmployeeHandler(read_model)
 
     query = GetContractsByEmployeeQuery(employee_id=employee_id)
-    contracts = await handler.handle(query)
+    views = await handler.handle(query)
 
-    return [to_response(contract) for contract in contracts]
+    return views
 
 
-@router.get("/employee/{employee_id}/active", response_model=List[ContractResponse])
+@router.get("/employee/{employee_id}/active", response_model=List[ContractListView])
 async def get_active_contracts(employee_id: UUID, db: AsyncSession = Depends(get_db)):
-    repository = SQLAlchemyContractRepository(db)
-    handler = GetActiveContractsHandler(repository)
+    read_model = ContractReadModel(db)
+    handler = GetActiveContractsHandler(read_model)
 
     query = GetActiveContractsQuery(employee_id=employee_id)
-    contracts = await handler.handle(query)
+    views = await handler.handle(query)
 
-    return [to_response(contract) for contract in contracts]
+    return views
 
 
-@router.post("/{contract_id}/activate", response_model=ContractResponse)
+@router.post("/{contract_id}/activate", response_model=ContractDetailView)
 async def activate_contract(contract_id: UUID, db: AsyncSession = Depends(get_db)):
     repository = SQLAlchemyContractRepository(db)
     handler = ActivateContractHandler(repository)
@@ -181,14 +144,19 @@ async def activate_contract(contract_id: UUID, db: AsyncSession = Depends(get_db
     try:
         contract = await handler.handle(command)
         await db.commit()
-        return to_response(contract)
+        # Fetch from ReadModel after write
+        read_model = ContractReadModel(db)
+        view = await read_model.get_by_id(contract.id)
+        return view
     except ValueError as e:
         await db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.post("/{contract_id}/cancel", response_model=ContractResponse)
-async def cancel_contract(contract_id: UUID, request: CancelContractRequest, db: AsyncSession = Depends(get_db)):
+@router.post("/{contract_id}/cancel", response_model=ContractDetailView)
+async def cancel_contract(
+    contract_id: UUID, request: CancelContractRequest, db: AsyncSession = Depends(get_db)
+):
     repository = SQLAlchemyContractRepository(db)
     handler = CancelContractHandler(repository)
 
@@ -197,13 +165,15 @@ async def cancel_contract(contract_id: UUID, request: CancelContractRequest, db:
     try:
         contract = await handler.handle(command)
         await db.commit()
-        return to_response(contract)
+        read_model = ContractReadModel(db)
+        view = await read_model.get_by_id(contract.id)
+        return view
     except ValueError as e:
         await db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.post("/{contract_id}/expire", response_model=ContractResponse)
+@router.post("/{contract_id}/expire", response_model=ContractDetailView)
 async def expire_contract(contract_id: UUID, db: AsyncSession = Depends(get_db)):
     repository = SQLAlchemyContractRepository(db)
     handler = ExpireContractHandler(repository)
@@ -213,7 +183,9 @@ async def expire_contract(contract_id: UUID, db: AsyncSession = Depends(get_db))
     try:
         contract = await handler.handle(command)
         await db.commit()
-        return to_response(contract)
+        read_model = ContractReadModel(db)
+        view = await read_model.get_by_id(contract.id)
+        return view
     except ValueError as e:
         await db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

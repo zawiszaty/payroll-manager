@@ -7,6 +7,7 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.modules.employee.api.views import EmployeeDetailView, EmployeeListView
 from app.modules.employee.application.commands import (
     ChangeEmployeeStatusCommand,
     CreateEmployeeCommand,
@@ -21,27 +22,10 @@ from app.modules.employee.application.handlers import (
 )
 from app.modules.employee.application.queries import GetEmployeeQuery, ListEmployeesQuery
 from app.modules.employee.domain.value_objects import EmploymentStatusType
+from app.modules.employee.infrastructure.read_model import EmployeeReadModel
 from app.modules.employee.infrastructure.repository import SQLAlchemyEmployeeRepository
 
 router = APIRouter()
-
-
-class EmploymentStatusResponse(BaseModel):
-    status_type: EmploymentStatusType
-    valid_from: date
-    valid_to: date | None
-    reason: str | None
-
-
-class EmployeeResponse(BaseModel):
-    id: UUID
-    first_name: str
-    last_name: str
-    email: EmailStr
-    phone: str | None
-    date_of_birth: date | None
-    hire_date: date | None
-    statuses: List[EmploymentStatusResponse]
 
 
 class CreateEmployeeRequest(BaseModel):
@@ -67,28 +51,7 @@ class ChangeStatusRequest(BaseModel):
     reason: str | None = None
 
 
-def to_response(employee) -> EmployeeResponse:
-    return EmployeeResponse(
-        id=employee.id,
-        first_name=employee.first_name,
-        last_name=employee.last_name,
-        email=employee.email,
-        phone=employee.phone,
-        date_of_birth=employee.date_of_birth,
-        hire_date=employee.hire_date,
-        statuses=[
-            EmploymentStatusResponse(
-                status_type=s.status_type,
-                valid_from=s.date_range.valid_from,
-                valid_to=s.date_range.valid_to,
-                reason=s.reason,
-            )
-            for s in employee.statuses
-        ],
-    )
-
-
-@router.post("/", response_model=EmployeeResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=EmployeeDetailView, status_code=status.HTTP_201_CREATED)
 async def create_employee(request: CreateEmployeeRequest, db: AsyncSession = Depends(get_db)):
     repository = SQLAlchemyEmployeeRepository(db)
     handler = CreateEmployeeHandler(repository)
@@ -105,38 +68,42 @@ async def create_employee(request: CreateEmployeeRequest, db: AsyncSession = Dep
     try:
         employee = await handler.handle(command)
         await db.commit()
-        return to_response(employee)
+
+        # Fetch from ReadModel after write
+        read_model = EmployeeReadModel(db)
+        view = await read_model.get_by_id(employee.id)
+        return view
     except ValueError as e:
         await db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.get("/{employee_id}", response_model=EmployeeResponse)
+@router.get("/{employee_id}", response_model=EmployeeDetailView)
 async def get_employee(employee_id: UUID, db: AsyncSession = Depends(get_db)):
-    repository = SQLAlchemyEmployeeRepository(db)
-    handler = GetEmployeeHandler(repository)
+    read_model = EmployeeReadModel(db)
+    handler = GetEmployeeHandler(read_model)
 
     query = GetEmployeeQuery(employee_id=employee_id)
-    employee = await handler.handle(query)
+    view = await handler.handle(query)
 
-    if not employee:
+    if not view:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found")
 
-    return to_response(employee)
+    return view
 
 
-@router.get("/", response_model=List[EmployeeResponse])
+@router.get("/", response_model=List[EmployeeListView])
 async def list_employees(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)):
-    repository = SQLAlchemyEmployeeRepository(db)
-    handler = ListEmployeesHandler(repository)
+    read_model = EmployeeReadModel(db)
+    handler = ListEmployeesHandler(read_model)
 
     query = ListEmployeesQuery(skip=skip, limit=limit)
-    employees = await handler.handle(query)
+    views = await handler.handle(query)
 
-    return [to_response(emp) for emp in employees]
+    return views
 
 
-@router.put("/{employee_id}", response_model=EmployeeResponse)
+@router.put("/{employee_id}", response_model=EmployeeDetailView)
 async def update_employee(
     employee_id: UUID, request: UpdateEmployeeRequest, db: AsyncSession = Depends(get_db)
 ):
@@ -155,13 +122,17 @@ async def update_employee(
     try:
         employee = await handler.handle(command)
         await db.commit()
-        return to_response(employee)
+
+        # Fetch from ReadModel after write
+        read_model = EmployeeReadModel(db)
+        view = await read_model.get_by_id(employee.id)
+        return view
     except ValueError as e:
         await db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.post("/{employee_id}/status", response_model=EmployeeResponse)
+@router.post("/{employee_id}/status", response_model=EmployeeDetailView)
 async def change_employee_status(
     employee_id: UUID, request: ChangeStatusRequest, db: AsyncSession = Depends(get_db)
 ):
@@ -178,7 +149,10 @@ async def change_employee_status(
     try:
         employee = await handler.handle(command)
         await db.commit()
-        return to_response(employee)
+
+        read_model = EmployeeReadModel(db)
+        view = await read_model.get_by_id(employee.id)
+        return view
     except ValueError as e:
         await db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

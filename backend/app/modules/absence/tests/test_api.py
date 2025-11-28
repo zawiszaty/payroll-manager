@@ -261,9 +261,7 @@ async def test_get_absence_balances_by_employee_and_year(client):
         },
     )
 
-    response = await client.get(
-        f"/api/v1/absence/balances/employee/{employee_id}/year/2025"
-    )
+    response = await client.get(f"/api/v1/absence/balances/employee/{employee_id}/year/2025")
 
     assert response.status_code == 200
     data = response.json()

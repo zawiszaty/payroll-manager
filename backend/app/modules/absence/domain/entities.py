@@ -52,10 +52,7 @@ class Absence:
         self.status = AbsenceStatus.CANCELLED
 
     def is_active_at(self, check_date: date) -> bool:
-        return (
-            self.status == AbsenceStatus.APPROVED
-            and self.period.contains(check_date)
-        )
+        return self.status == AbsenceStatus.APPROVED and self.period.contains(check_date)
 
     def overlaps_with(self, other_period: DateRange) -> bool:
         return self.period.overlaps_with(other_period)

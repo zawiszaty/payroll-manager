@@ -45,7 +45,6 @@ from app.modules.absence.application.queries import (
     ListAbsenceBalancesQuery,
     ListAbsencesQuery,
 )
-from app.modules.absence.infrastructure.models import AbsenceBalanceModel, AbsenceModel
 from app.modules.absence.infrastructure.repository import (
     SQLAlchemyAbsenceBalanceRepository,
     SQLAlchemyAbsenceRepository,
@@ -91,9 +90,7 @@ def _to_balance_response(balance) -> AbsenceBalanceResponse:
 
 
 @router.post("/absences/", response_model=AbsenceResponse, status_code=201)
-async def create_absence(
-    data: AbsenceCreate, session: AsyncSession = Depends(get_db)
-):
+async def create_absence(data: AbsenceCreate, session: AsyncSession = Depends(get_db)):
     absence_repo = SQLAlchemyAbsenceRepository(session)
     balance_repo = SQLAlchemyAbsenceBalanceRepository(session)
 
@@ -138,9 +135,7 @@ async def list_absences(session: AsyncSession = Depends(get_db)):
 
 
 @router.get("/absences/employee/{employee_id}", response_model=List[AbsenceResponse])
-async def get_absences_by_employee(
-    employee_id: UUID, session: AsyncSession = Depends(get_db)
-):
+async def get_absences_by_employee(employee_id: UUID, session: AsyncSession = Depends(get_db)):
     absence_repo = SQLAlchemyAbsenceRepository(session)
     handler = GetAbsencesByEmployeeHandler(absence_repo)
     absences = await handler.handle(GetAbsencesByEmployeeQuery(employee_id=employee_id))
@@ -196,9 +191,7 @@ async def cancel_absence(absence_id: UUID, session: AsyncSession = Depends(get_d
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post(
-    "/balances/", response_model=AbsenceBalanceDetailResponse, status_code=201
-)
+@router.post("/balances/", response_model=AbsenceBalanceDetailResponse, status_code=201)
 async def create_absence_balance(
     data: AbsenceBalanceCreate, session: AsyncSession = Depends(get_db)
 ):
@@ -223,9 +216,7 @@ async def create_absence_balance(
 
 
 @router.get("/balances/{balance_id}", response_model=AbsenceBalanceResponse)
-async def get_absence_balance(
-    balance_id: UUID, session: AsyncSession = Depends(get_db)
-):
+async def get_absence_balance(balance_id: UUID, session: AsyncSession = Depends(get_db)):
     balance_repo = SQLAlchemyAbsenceBalanceRepository(session)
     handler = GetAbsenceBalanceHandler(balance_repo)
 
@@ -244,17 +235,13 @@ async def list_absence_balances(session: AsyncSession = Depends(get_db)):
     return [_to_balance_response(balance) for balance in balances]
 
 
-@router.get(
-    "/balances/employee/{employee_id}", response_model=List[AbsenceBalanceResponse]
-)
+@router.get("/balances/employee/{employee_id}", response_model=List[AbsenceBalanceResponse])
 async def get_absence_balances_by_employee(
     employee_id: UUID, session: AsyncSession = Depends(get_db)
 ):
     balance_repo = SQLAlchemyAbsenceBalanceRepository(session)
     handler = GetAbsenceBalancesByEmployeeHandler(balance_repo)
-    balances = await handler.handle(
-        GetAbsenceBalancesByEmployeeQuery(employee_id=employee_id)
-    )
+    balances = await handler.handle(GetAbsenceBalancesByEmployeeQuery(employee_id=employee_id))
     return [_to_balance_response(balance) for balance in balances]
 
 
@@ -279,9 +266,7 @@ async def update_absence_balance(
 ):
     balance_repo = SQLAlchemyAbsenceBalanceRepository(session)
 
-    command = UpdateAbsenceBalanceCommand(
-        balance_id=balance_id, total_days=data.total_days
-    )
+    command = UpdateAbsenceBalanceCommand(balance_id=balance_id, total_days=data.total_days)
 
     handler = UpdateAbsenceBalanceHandler(balance_repo)
 

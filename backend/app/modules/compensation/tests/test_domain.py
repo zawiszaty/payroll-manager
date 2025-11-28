@@ -135,7 +135,9 @@ def test_sick_leave_calculation():
     days_taken = 5
     sick_pay = sick_leave.calculate_sick_pay(monthly_salary, days_taken)
 
-    expected_sick_pay = monthly_salary * (Decimal("80.0") / Decimal("100")) * Decimal("5") / Decimal("30")
+    expected_sick_pay = (
+        monthly_salary * (Decimal("80.0") / Decimal("100")) * Decimal("5") / Decimal("30")
+    )
     assert sick_pay == expected_sick_pay
 
 
@@ -153,7 +155,9 @@ def test_sick_leave_exceeds_max_days():
     days_taken = 15
     sick_pay = sick_leave.calculate_sick_pay(monthly_salary, days_taken)
 
-    expected_sick_pay = monthly_salary * (Decimal("80.0") / Decimal("100")) * Decimal("10") / Decimal("30")
+    expected_sick_pay = (
+        monthly_salary * (Decimal("80.0") / Decimal("100")) * Decimal("10") / Decimal("30")
+    )
     assert sick_pay == expected_sick_pay
 
 

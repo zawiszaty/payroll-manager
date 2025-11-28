@@ -66,7 +66,11 @@ class SQLAlchemyRateRepository(RateRepository):
         return self._to_domain(orm) if orm else None
 
     async def get_by_employee_id(self, employee_id: UUID) -> List[Rate]:
-        stmt = select(RateORM).where(RateORM.employee_id == employee_id).order_by(RateORM.valid_from.desc())
+        stmt = (
+            select(RateORM)
+            .where(RateORM.employee_id == employee_id)
+            .order_by(RateORM.valid_from.desc())
+        )
         result = await self.session.execute(stmt)
         orms = result.scalars().all()
         return [self._to_domain(orm) for orm in orms]
@@ -165,7 +169,11 @@ class SQLAlchemyBonusRepository(BonusRepository):
         return self._to_domain(orm) if orm else None
 
     async def get_by_employee_id(self, employee_id: UUID) -> List[Bonus]:
-        stmt = select(BonusORM).where(BonusORM.employee_id == employee_id).order_by(BonusORM.payment_date.desc())
+        stmt = (
+            select(BonusORM)
+            .where(BonusORM.employee_id == employee_id)
+            .order_by(BonusORM.payment_date.desc())
+        )
         result = await self.session.execute(stmt)
         orms = result.scalars().all()
         return [self._to_domain(orm) for orm in orms]
@@ -231,7 +239,9 @@ class SQLAlchemyDeductionRepository(DeductionRepository):
 
     async def get_by_employee_id(self, employee_id: UUID) -> List[Deduction]:
         stmt = (
-            select(DeductionORM).where(DeductionORM.employee_id == employee_id).order_by(DeductionORM.valid_from.desc())
+            select(DeductionORM)
+            .where(DeductionORM.employee_id == employee_id)
+            .order_by(DeductionORM.valid_from.desc())
         )
         result = await self.session.execute(stmt)
         orms = result.scalars().all()
@@ -254,7 +264,9 @@ class SQLAlchemyDeductionRepository(DeductionRepository):
         return [self._to_domain(orm) for orm in orms]
 
     async def list(self, skip: int = 0, limit: int = 100) -> List[Deduction]:
-        stmt = select(DeductionORM).offset(skip).limit(limit).order_by(DeductionORM.created_at.desc())
+        stmt = (
+            select(DeductionORM).offset(skip).limit(limit).order_by(DeductionORM.created_at.desc())
+        )
         result = await self.session.execute(stmt)
         orms = result.scalars().all()
         return [self._to_domain(orm) for orm in orms]
@@ -334,7 +346,9 @@ class SQLAlchemyOvertimeRepository(OvertimeRepository):
 
     async def get_by_employee_id(self, employee_id: UUID) -> List[Overtime]:
         stmt = (
-            select(OvertimeORM).where(OvertimeORM.employee_id == employee_id).order_by(OvertimeORM.valid_from.desc())
+            select(OvertimeORM)
+            .where(OvertimeORM.employee_id == employee_id)
+            .order_by(OvertimeORM.valid_from.desc())
         )
         result = await self.session.execute(stmt)
         orms = result.scalars().all()

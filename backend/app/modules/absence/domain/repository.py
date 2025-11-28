@@ -55,9 +55,7 @@ class AbsenceBalanceRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_by_employee_and_year(
-        self, employee_id: UUID, year: int
-    ) -> List[AbsenceBalance]:
+    async def get_by_employee_and_year(self, employee_id: UUID, year: int) -> List[AbsenceBalance]:
         pass
 
     @abstractmethod

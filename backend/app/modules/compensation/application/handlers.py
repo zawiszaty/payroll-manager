@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 
 from app.modules.compensation.application.commands import (
     CreateBonusCommand,
@@ -35,6 +35,7 @@ from app.modules.compensation.domain.services import (
     CreateRateService,
     CreateSickLeaveService,
 )
+from app.modules.compensation.infrastructure.read_model import BonusReadModel, RateReadModel
 
 
 class CreateRateHandler:
@@ -56,35 +57,35 @@ class CreateRateHandler:
 
 
 class GetRateHandler:
-    def __init__(self, repository: RateRepository):
-        self.repository = repository
+    def __init__(self, read_model: RateReadModel):
+        self.read_model = read_model
 
-    async def handle(self, query: GetRateQuery) -> Optional[Rate]:
-        return await self.repository.get_by_id(query.rate_id)
+    async def handle(self, query: GetRateQuery):
+        return await self.read_model.get_by_id(query.rate_id)
 
 
 class GetRatesByEmployeeHandler:
-    def __init__(self, repository: RateRepository):
-        self.repository = repository
+    def __init__(self, read_model: RateReadModel):
+        self.read_model = read_model
 
-    async def handle(self, query: GetRatesByEmployeeQuery) -> List[Rate]:
-        return await self.repository.get_by_employee_id(query.employee_id)
+    async def handle(self, query: GetRatesByEmployeeQuery):
+        return await self.read_model.get_by_employee(query.employee_id)
 
 
 class GetActiveRateHandler:
-    def __init__(self, repository: RateRepository):
-        self.repository = repository
+    def __init__(self, read_model: RateReadModel):
+        self.read_model = read_model
 
-    async def handle(self, query: GetActiveRateQuery) -> Optional[Rate]:
-        return await self.repository.get_active_rate(query.employee_id, query.check_date)
+    async def handle(self, query: GetActiveRateQuery):
+        return await self.read_model.get_active_rate(query.employee_id, query.check_date)
 
 
 class ListRatesHandler:
-    def __init__(self, repository: RateRepository):
-        self.repository = repository
+    def __init__(self, read_model: RateReadModel):
+        self.read_model = read_model
 
-    async def handle(self, query: ListRatesQuery) -> List[Rate]:
-        return await self.repository.list(skip=query.skip, limit=query.limit)
+    async def handle(self, query: ListRatesQuery):
+        return await self.read_model.list(skip=query.skip, limit=query.limit)
 
 
 class CreateBonusHandler:
@@ -105,27 +106,27 @@ class CreateBonusHandler:
 
 
 class GetBonusHandler:
-    def __init__(self, repository: BonusRepository):
-        self.repository = repository
+    def __init__(self, read_model: BonusReadModel):
+        self.read_model = read_model
 
-    async def handle(self, query: GetBonusQuery) -> Optional[Bonus]:
-        return await self.repository.get_by_id(query.bonus_id)
+    async def handle(self, query: GetBonusQuery):
+        return await self.read_model.get_by_id(query.bonus_id)
 
 
 class GetBonusesByEmployeeHandler:
-    def __init__(self, repository: BonusRepository):
-        self.repository = repository
+    def __init__(self, read_model: BonusReadModel):
+        self.read_model = read_model
 
-    async def handle(self, query: GetBonusesByEmployeeQuery) -> List[Bonus]:
-        return await self.repository.get_by_employee_id(query.employee_id)
+    async def handle(self, query: GetBonusesByEmployeeQuery):
+        return await self.read_model.get_by_employee(query.employee_id)
 
 
 class ListBonusesHandler:
-    def __init__(self, repository: BonusRepository):
-        self.repository = repository
+    def __init__(self, read_model: BonusReadModel):
+        self.read_model = read_model
 
-    async def handle(self, query: ListBonusesQuery) -> List[Bonus]:
-        return await self.repository.list(skip=query.skip, limit=query.limit)
+    async def handle(self, query: ListBonusesQuery):
+        return await self.read_model.list(skip=query.skip, limit=query.limit)
 
 
 class CreateDeductionHandler:
