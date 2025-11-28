@@ -90,6 +90,11 @@ tasks:
     cmds:
       - docker compose exec backend pytest app/modules/compensation/tests/ -v
 
+  test-absence:
+    desc: Run absence module tests
+    cmds:
+      - docker compose exec backend pytest app/modules/absence/tests/ -v
+
   test-coverage:
     desc: Run tests with coverage report
     deps: [test-setup]

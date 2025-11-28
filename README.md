@@ -15,6 +15,7 @@ Payroll Manager is a modern, scalable solution for managing employee data, contr
 - **Employee Management** - Complete employee lifecycle with status tracking
 - **Contract Management** - Multiple contract types with lifecycle operations
 - **Compensation Management** - Rates, bonuses, deductions, overtime, and sick leave
+- **Absence Management** - Leave requests, absence tracking, and balance management
 
 ### Key Capabilities
 
@@ -152,6 +153,7 @@ task test                  # Run all tests
 task test-employee         # Run employee module tests
 task test-contract         # Run contract module tests
 task test-compensation     # Run compensation module tests
+task test-absence          # Run absence module tests
 task test-coverage         # Run tests with coverage report
 
 # Code Quality
@@ -176,6 +178,7 @@ task test
 task test-employee
 task test-contract
 task test-compensation
+task test-absence
 
 # With coverage
 task test-coverage
@@ -233,8 +236,9 @@ The project maintains 100% test coverage on all implemented modules:
 - **Employee Module**: 11 tests (5 domain + 6 API)
 - **Contract Module**: 14 tests (8 domain + 6 API)
 - **Compensation Module**: 19 tests (10 domain + 9 API)
+- **Absence Module**: 29 tests (15 domain + 14 API)
 
-**Total: 44 tests, 100% passing**
+**Total: 73 tests, 100% passing**
 
 ## Coding Standards
 

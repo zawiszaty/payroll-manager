@@ -383,6 +383,85 @@ task api-docs
 task help
 ```
 
+### ✅ M5: Absence Module (Completed)
+
+#### Domain Layer
+- **Absence** aggregate root:
+  - Employee absence records with date ranges
+  - Status management (pending, approved, rejected, cancelled)
+  - Absence type classification (vacation, sick leave, parental, etc.)
+  - Overlap detection with existing absences
+  - Days calculation for the absence period
+
+- **AbsenceBalance** aggregate root:
+  - Annual leave balance tracking per employee
+  - Balance by absence type and year
+  - Days used/remaining calculation
+  - Balance validation before approving absences
+
+- **Value Objects**:
+  - `AbsenceType`: VACATION, SICK_LEAVE, PARENTAL_LEAVE, UNPAID_LEAVE, BEREAVEMENT, STUDY_LEAVE, COMPASSIONATE
+  - `AbsenceStatus`: PENDING, APPROVED, REJECTED, CANCELLED
+  - `AbsenceBalanceInfo`: Balance snapshot with total, used, and remaining days
+
+#### Infrastructure Layer
+- **ORM Models**: AbsenceModel, AbsenceBalanceModel
+- **Repositories**: SQLAlchemyAbsenceRepository, SQLAlchemyAbsenceBalanceRepository
+- **Database Tables**: absences, absence_balances
+
+#### Application Layer (CQRS)
+- **Commands**:
+  - CreateAbsenceCommand: Submit new absence request
+  - ApproveAbsenceCommand: Approve absence and deduct from balance
+  - RejectAbsenceCommand: Reject absence request
+  - CancelAbsenceCommand: Cancel absence and return days to balance
+  - CreateAbsenceBalanceCommand: Initialize employee leave balance
+  - UpdateAbsenceBalanceCommand: Adjust total days for a balance
+
+- **Queries**:
+  - GetAbsenceQuery: Get absence by ID
+  - ListAbsencesQuery: List all absences
+  - GetAbsencesByEmployeeQuery: Get all absences for an employee
+  - GetAbsencesByEmployeeAndStatusQuery: Filter absences by status
+  - GetAbsenceBalanceQuery: Get balance by ID
+  - ListAbsenceBalancesQuery: List all balances
+  - GetAbsenceBalancesByEmployeeQuery: Get all balances for an employee
+  - GetAbsenceBalancesByEmployeeAndYearQuery: Get balances for specific year
+
+#### API Endpoints (14)
+- POST `/api/v1/absence/absences/` - Create absence request
+- GET `/api/v1/absence/absences/{id}` - Get absence
+- GET `/api/v1/absence/absences/` - List all absences
+- GET `/api/v1/absence/absences/employee/{id}` - Get absences by employee
+- POST `/api/v1/absence/absences/{id}/approve` - Approve absence
+- POST `/api/v1/absence/absences/{id}/reject` - Reject absence
+- POST `/api/v1/absence/absences/{id}/cancel` - Cancel absence
+- POST `/api/v1/absence/balances/` - Create absence balance
+- GET `/api/v1/absence/balances/{id}` - Get balance with remaining days
+- GET `/api/v1/absence/balances/` - List all balances
+- GET `/api/v1/absence/balances/employee/{id}` - Get balances by employee
+- GET `/api/v1/absence/balances/employee/{id}/year/{year}` - Get balances by year
+- PATCH `/api/v1/absence/balances/{id}` - Update balance total days
+
+#### Business Rules
+- Absence requests start in PENDING status
+- Only PENDING absences can be approved or rejected
+- PENDING and APPROVED absences can be cancelled
+- Approving an absence deducts days from the employee's balance
+- Cancelling an APPROVED absence returns days to the balance
+- Cannot create overlapping APPROVED absences for the same employee
+- System validates sufficient balance before approving absence (if balance exists)
+
+#### Tests
+- Domain Tests (15): Entity creation, status transitions, balance operations, validation rules
+- API Tests (14): CRUD operations, approval workflow, balance management, integration scenarios
+- Coverage: 29/29 tests passing (100%)
+
+#### Task Commands
+```bash
+task test-absence          # Run absence module tests
+```
+
 ## Database Schema
 
 ### Current Schema

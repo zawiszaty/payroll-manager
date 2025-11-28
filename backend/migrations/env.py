@@ -18,6 +18,10 @@ from app.modules.compensation.infrastructure.models import (
     OvertimeORM,
     SickLeaveORM,
 )
+from app.modules.absence.infrastructure.models import (
+    AbsenceModel,
+    AbsenceBalanceModel,
+)
 
 config = context.config
 settings = get_settings()
