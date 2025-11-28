@@ -51,7 +51,7 @@ jobs:
         uses: codecov/codecov-action@v4
         if: always()
         with:
-          files: ./backend/htmlcov/coverage.xml
+          files: ./backend/coverage.xml
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
 
