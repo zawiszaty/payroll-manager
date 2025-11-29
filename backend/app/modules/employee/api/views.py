@@ -34,3 +34,10 @@ class EmployeeDetailView(BaseModel):
     statuses: List[EmploymentStatusView]
     created_at: Optional[date]
     updated_at: Optional[date]
+
+
+class EmployeeListResponse(BaseModel):
+    """Wrapper for list of employees"""
+
+    items: List[EmployeeListView]
+    total: int

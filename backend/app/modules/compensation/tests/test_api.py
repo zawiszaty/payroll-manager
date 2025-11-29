@@ -62,7 +62,9 @@ async def test_list_rates(client):
 
     assert response.status_code == 200
     data = response.json()
-    assert isinstance(data, list)
+    assert "items" in data
+    assert "total" in data
+    assert isinstance(data["items"], list)
 
 
 @pytest.mark.asyncio
@@ -95,8 +97,11 @@ async def test_get_rates_by_employee(client):
 
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 2
-    assert all(r["employee_id"] == employee_id for r in data)
+    assert "items" in data
+    assert "total" in data
+    assert len(data["items"]) == 2
+    assert data["total"] == 2
+    assert all(r["employee_id"] == employee_id for r in data["items"])
 
 
 @pytest.mark.asyncio
@@ -192,7 +197,9 @@ async def test_list_bonuses(client):
 
     assert response.status_code == 200
     data = response.json()
-    assert isinstance(data, list)
+    assert "items" in data
+    assert "total" in data
+    assert isinstance(data["items"], list)
 
 
 @pytest.mark.asyncio
@@ -225,5 +232,8 @@ async def test_get_bonuses_by_employee(client):
 
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 2
-    assert all(b["employee_id"] == employee_id for b in data)
+    assert "items" in data
+    assert "total" in data
+    assert len(data["items"]) == 2
+    assert data["total"] == 2
+    assert all(b["employee_id"] == employee_id for b in data["items"])

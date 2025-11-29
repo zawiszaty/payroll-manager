@@ -8,7 +8,12 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.modules.compensation.api.views import BonusView, RateView
+from app.modules.compensation.api.views import (
+    BonusListResponse,
+    BonusView,
+    RateListResponse,
+    RateView,
+)
 from app.modules.compensation.application.commands import CreateBonusCommand, CreateRateCommand
 from app.modules.compensation.application.handlers import (
     CreateBonusHandler,
@@ -100,7 +105,7 @@ async def get_rate(rate_id: UUID, db: AsyncSession = Depends(get_db)):
     return rate
 
 
-@router.get("/rates/", response_model=List[RateView])
+@router.get("/rates/", response_model=RateListResponse)
 async def list_rates(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)):
     read_model = RateReadModel(db)
     handler = ListRatesHandler(read_model)
@@ -108,10 +113,10 @@ async def list_rates(skip: int = 0, limit: int = 100, db: AsyncSession = Depends
     query = ListRatesQuery(skip=skip, limit=limit)
     rates = await handler.handle(query)
 
-    return rates
+    return RateListResponse(items=rates, total=len(rates))
 
 
-@router.get("/rates/employee/{employee_id}", response_model=List[RateView])
+@router.get("/rates/employee/{employee_id}", response_model=RateListResponse)
 async def get_rates_by_employee(employee_id: UUID, db: AsyncSession = Depends(get_db)):
     read_model = RateReadModel(db)
     handler = GetRatesByEmployeeHandler(read_model)
@@ -119,7 +124,7 @@ async def get_rates_by_employee(employee_id: UUID, db: AsyncSession = Depends(ge
     query = GetRatesByEmployeeQuery(employee_id=employee_id)
     rates = await handler.handle(query)
 
-    return rates
+    return RateListResponse(items=rates, total=len(rates))
 
 
 @router.get("/rates/employee/{employee_id}/active", response_model=RateView)
@@ -178,7 +183,7 @@ async def get_bonus(bonus_id: UUID, db: AsyncSession = Depends(get_db)):
     return bonus
 
 
-@router.get("/bonuses/", response_model=List[BonusView])
+@router.get("/bonuses/", response_model=BonusListResponse)
 async def list_bonuses(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)):
     read_model = BonusReadModel(db)
     handler = ListBonusesHandler(read_model)
@@ -186,10 +191,10 @@ async def list_bonuses(skip: int = 0, limit: int = 100, db: AsyncSession = Depen
     query = ListBonusesQuery(skip=skip, limit=limit)
     bonuses = await handler.handle(query)
 
-    return bonuses
+    return BonusListResponse(items=bonuses, total=len(bonuses))
 
 
-@router.get("/bonuses/employee/{employee_id}", response_model=List[BonusView])
+@router.get("/bonuses/employee/{employee_id}", response_model=BonusListResponse)
 async def get_bonuses_by_employee(employee_id: UUID, db: AsyncSession = Depends(get_db)):
     read_model = BonusReadModel(db)
     handler = GetBonusesByEmployeeHandler(read_model)
@@ -197,4 +202,4 @@ async def get_bonuses_by_employee(employee_id: UUID, db: AsyncSession = Depends(
     query = GetBonusesByEmployeeQuery(employee_id=employee_id)
     bonuses = await handler.handle(query)
 
-    return bonuses
+    return BonusListResponse(items=bonuses, total=len(bonuses))

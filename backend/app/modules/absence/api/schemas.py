@@ -1,6 +1,6 @@
 from datetime import date
 from decimal import Decimal
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
@@ -62,3 +62,17 @@ class AbsenceBalanceDetailResponse(BaseModel):
     year: int
     total_days: Decimal
     used_days: Decimal
+
+
+class AbsenceListResponse(BaseModel):
+    """Wrapper for list of absences"""
+
+    items: List[AbsenceResponse]
+    total: int
+
+
+class AbsenceBalanceListResponse(BaseModel):
+    """Wrapper for list of absence balances"""
+
+    items: List[AbsenceBalanceResponse]
+    total: int

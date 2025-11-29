@@ -8,7 +8,11 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.modules.contract.api.views import ContractDetailView, ContractListView
+from app.modules.contract.api.views import (
+    ContractDetailView,
+    ContractListResponse,
+    ContractListView,
+)
 from app.modules.contract.application.commands import (
     ActivateContractCommand,
     CancelContractCommand,
@@ -101,7 +105,7 @@ async def get_contract(contract_id: UUID, db: AsyncSession = Depends(get_db)):
     return view
 
 
-@router.get("/", response_model=List[ContractListView])
+@router.get("/", response_model=ContractListResponse)
 async def list_contracts(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)):
     read_model = ContractReadModel(db)
     handler = ListContractsHandler(read_model)
@@ -109,10 +113,10 @@ async def list_contracts(skip: int = 0, limit: int = 100, db: AsyncSession = Dep
     query = ListContractsQuery(skip=skip, limit=limit)
     views = await handler.handle(query)
 
-    return views
+    return ContractListResponse(items=views, total=len(views))
 
 
-@router.get("/employee/{employee_id}", response_model=List[ContractListView])
+@router.get("/employee/{employee_id}", response_model=ContractListResponse)
 async def get_contracts_by_employee(employee_id: UUID, db: AsyncSession = Depends(get_db)):
     read_model = ContractReadModel(db)
     handler = GetContractsByEmployeeHandler(read_model)
@@ -120,10 +124,10 @@ async def get_contracts_by_employee(employee_id: UUID, db: AsyncSession = Depend
     query = GetContractsByEmployeeQuery(employee_id=employee_id)
     views = await handler.handle(query)
 
-    return views
+    return ContractListResponse(items=views, total=len(views))
 
 
-@router.get("/employee/{employee_id}/active", response_model=List[ContractListView])
+@router.get("/employee/{employee_id}/active", response_model=ContractListResponse)
 async def get_active_contracts(employee_id: UUID, db: AsyncSession = Depends(get_db)):
     read_model = ContractReadModel(db)
     handler = GetActiveContractsHandler(read_model)
@@ -131,7 +135,7 @@ async def get_active_contracts(employee_id: UUID, db: AsyncSession = Depends(get
     query = GetActiveContractsQuery(employee_id=employee_id)
     views = await handler.handle(query)
 
-    return views
+    return ContractListResponse(items=views, total=len(views))
 
 
 @router.post("/{contract_id}/activate", response_model=ContractDetailView)

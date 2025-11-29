@@ -59,7 +59,10 @@ async def test_list_employees(client: AsyncClient):
     response = await client.get("/api/v1/employees/")
     assert response.status_code == 200
     data = response.json()
-    assert len(data) >= 3
+    assert "items" in data
+    assert "total" in data
+    assert len(data["items"]) >= 3
+    assert data["total"] >= 3
 
 
 @pytest.mark.asyncio

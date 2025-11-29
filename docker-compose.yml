@@ -11,10 +11,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U payroll_user"]
+      test: ["CMD-SHELL", "pg_isready -U payroll_user -d payroll_db && psql -U payroll_user -d payroll_db -c 'SELECT 1'"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
@@ -62,26 +63,12 @@ services:
       DATABASE_URL: postgresql://payroll_user:payroll_pass@postgres:5432/payroll_db
       RABBITMQ_URL: amqp://payroll:payroll@rabbitmq:5672/
       REDIS_URL: redis://redis:6379/0
-
-  worker:
-    build: ./backend
-    container_name: payroll_worker
-    command: celery -A app.workers.celery_app worker --loglevel=info
-    volumes:
-      - ./backend:/app
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    env_file:
-      - .env
-    environment:
-      DATABASE_URL: postgresql://payroll_user:payroll_pass@postgres:5432/payroll_db
-      RABBITMQ_URL: amqp://payroll:payroll@rabbitmq:5672/
-      REDIS_URL: redis://redis:6379/0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
 volumes:
   postgres_data:
