@@ -28,6 +28,11 @@ jobs:
       - name: Ensure entrypoint.sh has execute permissions
         run: chmod +x backend/entrypoint.sh
 
+      - name: Clean up any existing volumes
+        run: |
+          docker compose down -v 2>/dev/null || true
+          docker volume prune -f
+
       - name: Build Docker images
         run: task build
 
