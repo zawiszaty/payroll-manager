@@ -35,7 +35,6 @@ wait_for_health() {
 wait_for_health "payroll_postgres" 120 "PostgreSQL"
 wait_for_health "payroll_rabbitmq" 60 "RabbitMQ"
 wait_for_health "payroll_redis" 60 "Redis"
-wait_for_health "payroll_backend" 120 "Backend"
 
 # Extra verification: test database connection
 echo "Running final database verification..."
