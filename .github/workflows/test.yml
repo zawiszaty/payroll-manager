@@ -42,9 +42,6 @@ jobs:
       - name: Wait for services to be healthy
         run: ./.github/scripts/wait-for-services.sh
 
-      - name: Run all tests
-        run: task test
-
       - name: Run tests with coverage
         run: task test-coverage
 
