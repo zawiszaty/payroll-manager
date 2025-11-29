@@ -22,6 +22,10 @@ from app.modules.absence.infrastructure.models import (
     AbsenceModel,
     AbsenceBalanceModel,
 )
+from app.modules.payroll.infrastructure.models import (
+    PayrollORM,
+    PayrollLineORM,
+)
 
 config = context.config
 settings = get_settings()

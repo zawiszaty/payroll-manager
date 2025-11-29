@@ -8,9 +8,11 @@ from app.database import get_db
 from app.modules.absence.api.schemas import (
     AbsenceBalanceCreate,
     AbsenceBalanceDetailResponse,
+    AbsenceBalanceListResponse,
     AbsenceBalanceResponse,
     AbsenceBalanceUpdate,
     AbsenceCreate,
+    AbsenceListResponse,
     AbsenceResponse,
 )
 from app.modules.absence.application.commands import (
@@ -126,20 +128,22 @@ async def get_absence(absence_id: UUID, session: AsyncSession = Depends(get_db))
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.get("/absences/", response_model=List[AbsenceResponse])
+@router.get("/absences/", response_model=AbsenceListResponse)
 async def list_absences(session: AsyncSession = Depends(get_db)):
     absence_repo = SQLAlchemyAbsenceRepository(session)
     handler = ListAbsencesHandler(absence_repo)
     absences = await handler.handle(ListAbsencesQuery())
-    return [_to_absence_response(absence) for absence in absences]
+    items = [_to_absence_response(absence) for absence in absences]
+    return AbsenceListResponse(items=items, total=len(items))
 
 
-@router.get("/absences/employee/{employee_id}", response_model=List[AbsenceResponse])
+@router.get("/absences/employee/{employee_id}", response_model=AbsenceListResponse)
 async def get_absences_by_employee(employee_id: UUID, session: AsyncSession = Depends(get_db)):
     absence_repo = SQLAlchemyAbsenceRepository(session)
     handler = GetAbsencesByEmployeeHandler(absence_repo)
     absences = await handler.handle(GetAbsencesByEmployeeQuery(employee_id=employee_id))
-    return [_to_absence_response(absence) for absence in absences]
+    items = [_to_absence_response(absence) for absence in absences]
+    return AbsenceListResponse(items=items, total=len(items))
 
 
 @router.post("/absences/{absence_id}/approve", response_model=AbsenceResponse)
@@ -227,27 +231,29 @@ async def get_absence_balance(balance_id: UUID, session: AsyncSession = Depends(
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.get("/balances/", response_model=List[AbsenceBalanceResponse])
+@router.get("/balances/", response_model=AbsenceBalanceListResponse)
 async def list_absence_balances(session: AsyncSession = Depends(get_db)):
     balance_repo = SQLAlchemyAbsenceBalanceRepository(session)
     handler = ListAbsenceBalancesHandler(balance_repo)
     balances = await handler.handle(ListAbsenceBalancesQuery())
-    return [_to_balance_response(balance) for balance in balances]
+    items = [_to_balance_response(balance) for balance in balances]
+    return AbsenceBalanceListResponse(items=items, total=len(items))
 
 
-@router.get("/balances/employee/{employee_id}", response_model=List[AbsenceBalanceResponse])
+@router.get("/balances/employee/{employee_id}", response_model=AbsenceBalanceListResponse)
 async def get_absence_balances_by_employee(
     employee_id: UUID, session: AsyncSession = Depends(get_db)
 ):
     balance_repo = SQLAlchemyAbsenceBalanceRepository(session)
     handler = GetAbsenceBalancesByEmployeeHandler(balance_repo)
     balances = await handler.handle(GetAbsenceBalancesByEmployeeQuery(employee_id=employee_id))
-    return [_to_balance_response(balance) for balance in balances]
+    items = [_to_balance_response(balance) for balance in balances]
+    return AbsenceBalanceListResponse(items=items, total=len(items))
 
 
 @router.get(
     "/balances/employee/{employee_id}/year/{year}",
-    response_model=List[AbsenceBalanceResponse],
+    response_model=AbsenceBalanceListResponse,
 )
 async def get_absence_balances_by_employee_and_year(
     employee_id: UUID, year: int, session: AsyncSession = Depends(get_db)
@@ -257,7 +263,8 @@ async def get_absence_balances_by_employee_and_year(
     balances = await handler.handle(
         GetAbsenceBalancesByEmployeeAndYearQuery(employee_id=employee_id, year=year)
     )
-    return [_to_balance_response(balance) for balance in balances]
+    items = [_to_balance_response(balance) for balance in balances]
+    return AbsenceBalanceListResponse(items=items, total=len(items))
 
 
 @router.patch("/balances/{balance_id}", response_model=AbsenceBalanceDetailResponse)

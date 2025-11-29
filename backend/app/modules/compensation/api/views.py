@@ -1,6 +1,6 @@
 from datetime import date
 from decimal import Decimal
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -31,3 +31,17 @@ class BonusView(BaseModel):
     description: Optional[str]
     created_at: Optional[date]
     updated_at: Optional[date]
+
+
+class RateListResponse(BaseModel):
+    """Wrapper for list of rates"""
+
+    items: List[RateView]
+    total: int
+
+
+class BonusListResponse(BaseModel):
+    """Wrapper for list of bonuses"""
+
+    items: List[BonusView]
+    total: int

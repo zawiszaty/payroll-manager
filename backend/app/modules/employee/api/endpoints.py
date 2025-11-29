@@ -1,5 +1,4 @@
 from datetime import date
-from typing import List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -7,7 +6,7 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.modules.employee.api.views import EmployeeDetailView, EmployeeListView
+from app.modules.employee.api.views import EmployeeDetailView, EmployeeListResponse
 from app.modules.employee.application.commands import (
     ChangeEmployeeStatusCommand,
     CreateEmployeeCommand,
@@ -92,7 +91,7 @@ async def get_employee(employee_id: UUID, db: AsyncSession = Depends(get_db)):
     return view
 
 
-@router.get("/", response_model=List[EmployeeListView])
+@router.get("/", response_model=EmployeeListResponse)
 async def list_employees(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)):
     read_model = EmployeeReadModel(db)
     handler = ListEmployeesHandler(read_model)
@@ -100,7 +99,7 @@ async def list_employees(skip: int = 0, limit: int = 100, db: AsyncSession = Dep
     query = ListEmployeesQuery(skip=skip, limit=limit)
     views = await handler.handle(query)
 
-    return views
+    return EmployeeListResponse(items=views, total=len(views))
 
 
 @router.put("/{employee_id}", response_model=EmployeeDetailView)

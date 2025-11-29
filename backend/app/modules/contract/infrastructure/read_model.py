@@ -89,7 +89,7 @@ class ContractReadModel:
             for orm in orms
         ]
 
-    async def get_active_by_employee(self, employee_id: UUID) -> List[ContractListView]:
+    async def get_active_by_employee(self, employee_id: UUID) -> List[ContractDetailView]:
         from datetime import date
 
         from app.modules.contract.domain.value_objects import ContractStatus
@@ -107,16 +107,25 @@ class ContractReadModel:
         orms = result.scalars().all()
 
         return [
-            ContractListView(
+            ContractDetailView(
                 id=orm.id,
                 employee_id=orm.employee_id,
-                contract_type=orm.contract_type,
-                rate_amount=orm.rate_amount,
-                rate_currency=orm.rate_currency,
-                valid_from=orm.valid_from,
-                valid_to=orm.valid_to,
+                terms=ContractTermsView(
+                    contract_type=orm.contract_type,
+                    rate_amount=orm.rate_amount,
+                    rate_currency=orm.rate_currency,
+                    valid_from=orm.valid_from,
+                    valid_to=orm.valid_to,
+                    hours_per_week=orm.hours_per_week,
+                    commission_percentage=orm.commission_percentage,
+                    description=orm.description,
+                ),
                 status=orm.status,
                 version=orm.version,
+                cancellation_reason=orm.cancellation_reason,
+                canceled_at=orm.canceled_at,
+                created_at=orm.created_at.date() if orm.created_at else None,
+                updated_at=orm.updated_at.date() if orm.updated_at else None,
             )
             for orm in orms
         ]

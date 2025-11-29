@@ -58,7 +58,9 @@ async def test_list_absences(client):
 
     assert response.status_code == 200
     data = response.json()
-    assert isinstance(data, list)
+    assert "items" in data
+    assert "total" in data
+    assert isinstance(data["items"], list)
 
 
 @pytest.mark.asyncio
@@ -89,8 +91,11 @@ async def test_get_absences_by_employee(client):
 
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 2
-    assert all(a["employee_id"] == employee_id for a in data)
+    assert "items" in data
+    assert "total" in data
+    assert len(data["items"]) == 2
+    assert data["total"] == 2
+    assert all(a["employee_id"] == employee_id for a in data["items"])
 
 
 @pytest.mark.asyncio
@@ -212,7 +217,9 @@ async def test_list_absence_balances(client):
 
     assert response.status_code == 200
     data = response.json()
-    assert isinstance(data, list)
+    assert "items" in data
+    assert "total" in data
+    assert isinstance(data["items"], list)
 
 
 @pytest.mark.asyncio
@@ -243,8 +250,11 @@ async def test_get_absence_balances_by_employee(client):
 
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 2
-    assert all(b["employee_id"] == employee_id for b in data)
+    assert "items" in data
+    assert "total" in data
+    assert len(data["items"]) == 2
+    assert data["total"] == 2
+    assert all(b["employee_id"] == employee_id for b in data["items"])
 
 
 @pytest.mark.asyncio
@@ -265,8 +275,11 @@ async def test_get_absence_balances_by_employee_and_year(client):
 
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 1
-    assert data[0]["year"] == 2025
+    assert "items" in data
+    assert "total" in data
+    assert len(data["items"]) == 1
+    assert data["total"] == 1
+    assert data["items"][0]["year"] == 2025
 
 
 @pytest.mark.asyncio
@@ -324,7 +337,7 @@ async def test_approve_absence_with_balance_deduction(client):
     balance_response = await client.get(
         f"/api/v1/absence/balances/employee/{employee_id}/year/2025"
     )
-    balance_data = balance_response.json()[0]
+    balance_data = balance_response.json()["items"][0]
 
     assert Decimal(balance_data["used_days"]) == Decimal("10.00")
     assert Decimal(balance_data["remaining_days"]) == Decimal("10.00")

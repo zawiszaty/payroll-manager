@@ -162,7 +162,10 @@ async def test_get_contracts_by_employee(client: AsyncClient):
     response = await client.get(f"/api/v1/contracts/employee/{employee_id}")
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 3
+    assert "items" in data
+    assert "total" in data
+    assert len(data["items"]) == 3
+    assert data["total"] == 3
 
 
 @pytest.mark.asyncio

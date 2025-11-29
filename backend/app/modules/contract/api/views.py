@@ -1,6 +1,6 @@
 from datetime import date
 from decimal import Decimal
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -41,3 +41,10 @@ class ContractDetailView(BaseModel):
     canceled_at: Optional[date]
     created_at: Optional[date]
     updated_at: Optional[date]
+
+
+class ContractListResponse(BaseModel):
+    """Wrapper for list of contracts"""
+
+    items: List[ContractListView]
+    total: int
