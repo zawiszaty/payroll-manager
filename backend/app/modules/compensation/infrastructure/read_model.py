@@ -1,8 +1,8 @@
 from datetime import date
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.compensation.api.views import BonusView, RateView
@@ -34,12 +34,18 @@ class RateReadModel:
             updated_at=orm.updated_at.date() if orm.updated_at else None,
         )
 
-    async def list(self, skip: int = 0, limit: int = 100) -> List[RateView]:
+    async def list(self, skip: int = 0, limit: int = 100) -> Tuple[List[RateView], int]:
+        # Get total count
+        count_stmt = select(func.count()).select_from(RateORM)
+        count_result = await self.session.execute(count_stmt)
+        total_count = count_result.scalar_one()
+
+        # Get paginated items
         stmt = select(RateORM).offset(skip).limit(limit).order_by(RateORM.created_at.desc())
         result = await self.session.execute(stmt)
         orms = result.scalars().all()
 
-        return [
+        items = [
             RateView(
                 id=orm.id,
                 employee_id=orm.employee_id,
@@ -54,6 +60,8 @@ class RateReadModel:
             )
             for orm in orms
         ]
+
+        return items, total_count
 
     async def get_by_employee(self, employee_id: UUID) -> List[RateView]:
         stmt = (
@@ -132,12 +140,18 @@ class BonusReadModel:
             updated_at=None,
         )
 
-    async def list(self, skip: int = 0, limit: int = 100) -> List[BonusView]:
+    async def list(self, skip: int = 0, limit: int = 100) -> Tuple[List[BonusView], int]:
+        # Get total count
+        count_stmt = select(func.count()).select_from(BonusORM)
+        count_result = await self.session.execute(count_stmt)
+        total_count = count_result.scalar_one()
+
+        # Get paginated items
         stmt = select(BonusORM).offset(skip).limit(limit).order_by(BonusORM.created_at.desc())
         result = await self.session.execute(stmt)
         orms = result.scalars().all()
 
-        return [
+        items = [
             BonusView(
                 id=orm.id,
                 employee_id=orm.employee_id,
@@ -151,6 +165,8 @@ class BonusReadModel:
             )
             for orm in orms
         ]
+
+        return items, total_count
 
     async def get_by_employee(self, employee_id: UUID) -> List[BonusView]:
         stmt = (

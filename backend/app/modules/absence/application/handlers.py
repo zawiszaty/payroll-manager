@@ -191,8 +191,9 @@ class ListAbsencesHandler:
     def __init__(self, absence_repository: AbsenceRepository):
         self.absence_repository = absence_repository
 
-    async def handle(self, query: ListAbsencesQuery) -> List[Absence]:
-        return await self.absence_repository.get_all()
+    async def handle(self, query: ListAbsencesQuery):
+        items, total_count = await self.absence_repository.get_all(skip=query.skip, limit=query.limit)
+        return items, total_count
 
 
 class GetAbsencesByEmployeeHandler:
@@ -228,8 +229,9 @@ class ListAbsenceBalancesHandler:
     def __init__(self, balance_repository: AbsenceBalanceRepository):
         self.balance_repository = balance_repository
 
-    async def handle(self, query: ListAbsenceBalancesQuery) -> List[AbsenceBalance]:
-        return await self.balance_repository.get_all()
+    async def handle(self, query: ListAbsenceBalancesQuery):
+        items, total_count = await self.balance_repository.get_all(skip=query.skip, limit=query.limit)
+        return items, total_count
 
 
 class GetAbsenceBalancesByEmployeeHandler:

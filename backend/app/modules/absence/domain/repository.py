@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import date
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from uuid import UUID
 
 from app.modules.absence.domain.entities import Absence, AbsenceBalance
@@ -17,7 +17,7 @@ class AbsenceRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_all(self) -> List[Absence]:
+    async def get_all(self, skip: int = 0, limit: int = 100) -> Tuple[List[Absence], int]:
         pass
 
     @abstractmethod
@@ -47,7 +47,7 @@ class AbsenceBalanceRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_all(self) -> List[AbsenceBalance]:
+    async def get_all(self, skip: int = 0, limit: int = 100) -> Tuple[List[AbsenceBalance], int]:
         pass
 
     @abstractmethod

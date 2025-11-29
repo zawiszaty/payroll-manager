@@ -11,7 +11,8 @@ class GetAbsenceQuery:
 
 @dataclass
 class ListAbsencesQuery:
-    pass
+    skip: int = 0
+    limit: int = 100
 
 
 @dataclass
@@ -32,7 +33,8 @@ class GetAbsenceBalanceQuery:
 
 @dataclass
 class ListAbsenceBalancesQuery:
-    pass
+    skip: int = 0
+    limit: int = 100
 
 
 @dataclass
