@@ -1,8 +1,8 @@
 from datetime import date
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from uuid import UUID
 
-from sqlalchemy import and_, select
+from sqlalchemy import and_, select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.absence.domain.entities import Absence, AbsenceBalance
@@ -58,10 +58,20 @@ class SQLAlchemyAbsenceRepository(AbsenceRepository):
         model = result.scalar_one_or_none()
         return self._to_domain(model) if model else None
 
-    async def get_all(self) -> List[Absence]:
-        result = await self.session.execute(select(AbsenceModel))
+    async def get_all(self, skip: int = 0, limit: int = 100) -> Tuple[List[Absence], int]:
+        # Get total count
+        count_stmt = select(func.count()).select_from(AbsenceModel)
+        count_result = await self.session.execute(count_stmt)
+        total_count = count_result.scalar_one()
+
+        # Get paginated items
+        result = await self.session.execute(
+            select(AbsenceModel).offset(skip).limit(limit).order_by(AbsenceModel.created_at.desc())
+        )
         models = result.scalars().all()
-        return [self._to_domain(model) for model in models]
+        items = [self._to_domain(model) for model in models]
+
+        return items, total_count
 
     async def get_by_employee(self, employee_id: UUID) -> List[Absence]:
         result = await self.session.execute(
@@ -138,10 +148,20 @@ class SQLAlchemyAbsenceBalanceRepository(AbsenceBalanceRepository):
         model = result.scalar_one_or_none()
         return self._to_domain(model) if model else None
 
-    async def get_all(self) -> List[AbsenceBalance]:
-        result = await self.session.execute(select(AbsenceBalanceModel))
+    async def get_all(self, skip: int = 0, limit: int = 100) -> Tuple[List[AbsenceBalance], int]:
+        # Get total count
+        count_stmt = select(func.count()).select_from(AbsenceBalanceModel)
+        count_result = await self.session.execute(count_stmt)
+        total_count = count_result.scalar_one()
+
+        # Get paginated items
+        result = await self.session.execute(
+            select(AbsenceBalanceModel).offset(skip).limit(limit).order_by(AbsenceBalanceModel.created_at.desc())
+        )
         models = result.scalars().all()
-        return [self._to_domain(model) for model in models]
+        items = [self._to_domain(model) for model in models]
+
+        return items, total_count
 
     async def get_by_employee(self, employee_id: UUID) -> List[AbsenceBalance]:
         result = await self.session.execute(

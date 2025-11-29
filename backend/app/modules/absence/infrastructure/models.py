@@ -1,8 +1,8 @@
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import Date, Numeric, String
+from sqlalchemy import Date, DateTime, Numeric, String, func
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -21,6 +21,8 @@ class AbsenceModel(Base):
     status: Mapped[AbsenceStatus] = mapped_column(SQLEnum(AbsenceStatus, name="absencestatus"))
     reason: Mapped[str | None] = mapped_column(String, nullable=True)
     notes: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
 class AbsenceBalanceModel(Base):
@@ -32,3 +34,5 @@ class AbsenceBalanceModel(Base):
     year: Mapped[int] = mapped_column(index=True)
     total_days: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     used_days: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

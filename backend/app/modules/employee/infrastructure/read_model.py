@@ -1,7 +1,7 @@
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -50,7 +50,13 @@ class EmployeeReadModel:
             updated_at=orm.updated_at.date() if orm.updated_at else None,
         )
 
-    async def list(self, skip: int = 0, limit: int = 100) -> List[EmployeeListView]:
+    async def list(self, skip: int = 0, limit: int = 100) -> Tuple[List[EmployeeListView], int]:
+        # Get total count
+        count_stmt = select(func.count()).select_from(EmployeeORM)
+        count_result = await self.session.execute(count_stmt)
+        total_count = count_result.scalar_one()
+
+        # Get paginated items
         stmt = (
             select(EmployeeORM)
             .options(selectinload(EmployeeORM.statuses))
@@ -61,7 +67,7 @@ class EmployeeReadModel:
         result = await self.session.execute(stmt)
         orms = result.scalars().all()
 
-        return [
+        items = [
             EmployeeListView(
                 id=orm.id,
                 first_name=orm.first_name,
@@ -72,6 +78,8 @@ class EmployeeReadModel:
             )
             for orm in orms
         ]
+
+        return items, total_count
 
     def _get_current_status(self, orm: EmployeeORM):
         from datetime import date

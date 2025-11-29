@@ -1,7 +1,7 @@
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.contract.api.views import (
@@ -45,12 +45,18 @@ class ContractReadModel:
             updated_at=orm.updated_at.date() if orm.updated_at else None,
         )
 
-    async def list(self, skip: int = 0, limit: int = 100) -> List[ContractListView]:
+    async def list(self, skip: int = 0, limit: int = 100) -> Tuple[List[ContractListView], int]:
+        # Get total count
+        count_stmt = select(func.count()).select_from(ContractORM)
+        count_result = await self.session.execute(count_stmt)
+        total_count = count_result.scalar_one()
+
+        # Get paginated items
         stmt = select(ContractORM).offset(skip).limit(limit).order_by(ContractORM.created_at.desc())
         result = await self.session.execute(stmt)
         orms = result.scalars().all()
 
-        return [
+        items = [
             ContractListView(
                 id=orm.id,
                 employee_id=orm.employee_id,
@@ -64,6 +70,8 @@ class ContractReadModel:
             )
             for orm in orms
         ]
+
+        return items, total_count
 
     async def get_by_employee(self, employee_id: UUID) -> List[ContractListView]:
         stmt = (

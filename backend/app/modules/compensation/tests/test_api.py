@@ -63,7 +63,9 @@ async def test_list_rates(client):
     assert response.status_code == 200
     data = response.json()
     assert "items" in data
-    assert "total" in data
+    assert "metadata" in data
+    assert "_links" in data
+    assert "total_items" in data["metadata"]
     assert isinstance(data["items"], list)
 
 
@@ -198,7 +200,9 @@ async def test_list_bonuses(client):
     assert response.status_code == 200
     data = response.json()
     assert "items" in data
-    assert "total" in data
+    assert "metadata" in data
+    assert "_links" in data
+    assert "total_items" in data["metadata"]
     assert isinstance(data["items"], list)
 
 

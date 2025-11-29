@@ -60,9 +60,11 @@ async def test_list_employees(client: AsyncClient):
     assert response.status_code == 200
     data = response.json()
     assert "items" in data
-    assert "total" in data
+    assert "metadata" in data
+    assert "_links" in data
+    assert "total_items" in data["metadata"]
     assert len(data["items"]) >= 3
-    assert data["total"] >= 3
+    assert data["metadata"]["total_items"] >= 3
 
 
 @pytest.mark.asyncio

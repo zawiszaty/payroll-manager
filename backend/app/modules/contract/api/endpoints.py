@@ -3,11 +3,12 @@ from decimal import Decimal
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.shared.infrastructure.pagination import PaginatedResponse, create_paginated_response
 from app.modules.contract.api.views import (
     ContractDetailView,
     ContractListResponse,
@@ -105,15 +106,34 @@ async def get_contract(contract_id: UUID, db: AsyncSession = Depends(get_db)):
     return view
 
 
-@router.get("/", response_model=ContractListResponse)
-async def list_contracts(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)):
+@router.get("/", response_model=PaginatedResponse[ContractListView])
+async def list_contracts(
+    request: Request,
+    page: int = 1,
+    limit: int = 100,
+    db: AsyncSession = Depends(get_db),
+):
+    if page < 1:
+        raise HTTPException(status_code=400, detail="Page must be >= 1")
+    if limit < 1 or limit > 100:
+        raise HTTPException(status_code=400, detail="Limit must be between 1 and 100")
+
+    skip = (page - 1) * limit
+
     read_model = ContractReadModel(db)
     handler = ListContractsHandler(read_model)
 
     query = ListContractsQuery(skip=skip, limit=limit)
-    views = await handler.handle(query)
+    items, total_count = await handler.handle(query)
 
-    return ContractListResponse(items=views, total=len(views))
+    base_url = str(request.url).split("?")[0]
+    return create_paginated_response(
+        items=items,
+        total_items=total_count,
+        page=page,
+        limit=limit,
+        base_url=base_url,
+    )
 
 
 @router.get("/employee/{employee_id}", response_model=ContractListResponse)

@@ -140,15 +140,17 @@ class ListPayrollsHandler:
     def __init__(self, read_model: PayrollReadModel):
         self.read_model = read_model
 
-    async def handle(self, query: ListPayrollsQuery) -> List[PayrollListView]:
-        return await self.read_model.list(skip=query.skip, limit=query.limit)
+    async def handle(self, query: ListPayrollsQuery):
+        items, total_count = await self.read_model.list(skip=query.skip, limit=query.limit)
+        return items, total_count
 
 
 class ListPayrollsByEmployeeHandler:
     def __init__(self, read_model: PayrollReadModel):
         self.read_model = read_model
 
-    async def handle(self, query: ListPayrollsByEmployeeQuery) -> List[PayrollListView]:
-        return await self.read_model.list_by_employee(
+    async def handle(self, query: ListPayrollsByEmployeeQuery):
+        items, total_count = await self.read_model.list_by_employee(
             query.employee_id, skip=query.skip, limit=query.limit
         )
+        return items, total_count
