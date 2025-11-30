@@ -7,7 +7,7 @@ This is the public interface for inter-module communication
 from abc import ABC, abstractmethod
 from datetime import date
 from decimal import Decimal
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,8 +26,11 @@ class ICompensationModuleFacade(ABC):
     """
 
     @abstractmethod
-    async def get_active_rate(self, employee_id: UUID, check_date: date) -> RateView:
-        """Get active compensation rate for employee on a specific date"""
+    async def get_active_rate(self, employee_id: UUID, check_date: date) -> Optional[RateView]:
+        """
+        Get active compensation rate for employee on a specific date
+        Returns None if no active rate is found
+        """
         pass
 
     @abstractmethod
@@ -64,8 +67,11 @@ class CompensationModuleFacade(ICompensationModuleFacade):
         self.rate_read_model = RateReadModel(session)
         self.bonus_read_model = BonusReadModel(session)
 
-    async def get_active_rate(self, employee_id: UUID, check_date: date) -> RateView:
-        """Get active compensation rate for employee on a specific date"""
+    async def get_active_rate(self, employee_id: UUID, check_date: date) -> Optional[RateView]:
+        """
+        Get active compensation rate for employee on a specific date
+        Returns None if no active rate is found
+        """
         return await self.rate_read_model.get_active_rate(employee_id, check_date)
 
     async def get_bonuses_for_period(
