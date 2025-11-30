@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date
 from decimal import Decimal
 from uuid import uuid4
 
@@ -11,7 +11,6 @@ from app.modules.payroll.domain.value_objects import (
     PayrollPeriod,
     PayrollPeriodType,
     PayrollStatus,
-    PayrollSummary,
 )
 from app.shared.domain.value_objects import Money
 

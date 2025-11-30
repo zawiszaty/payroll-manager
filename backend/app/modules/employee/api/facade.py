@@ -4,6 +4,7 @@ Exposes employee module capabilities to other modules
 This is the public interface for inter-module communication
 """
 
+from abc import ABC, abstractmethod
 from datetime import date
 from typing import Optional
 from uuid import UUID
@@ -14,7 +15,37 @@ from app.modules.employee.domain.value_objects import EmploymentStatusType
 from app.modules.employee.infrastructure.read_model import EmployeeReadModel
 
 
-class EmployeeModuleFacade:
+class IEmployeeModuleFacade(ABC):
+    """
+    Interface for Employee module facade
+    Defines the public contract for inter-module communication
+    """
+
+    @abstractmethod
+    async def get_employee_by_id(self, employee_id: UUID):
+        """Get employee details by ID"""
+        pass
+
+    @abstractmethod
+    async def is_employee_active_on_date(self, employee_id: UUID, check_date: date) -> bool:
+        """
+        Check if employee is active on a specific date
+        Returns True if employee has an ACTIVE status on that date
+        """
+        pass
+
+    @abstractmethod
+    async def get_employee_hire_date(self, employee_id: UUID) -> Optional[date]:
+        """Get employee hire date"""
+        pass
+
+    @abstractmethod
+    async def get_employee_full_name(self, employee_id: UUID) -> Optional[str]:
+        """Get employee full name"""
+        pass
+
+
+class EmployeeModuleFacade(IEmployeeModuleFacade):
     """
     Facade for Employee module
     Provides async methods for other modules to query employee data
@@ -28,9 +59,7 @@ class EmployeeModuleFacade:
         """Get employee details by ID"""
         return await self.read_model.get_by_id(employee_id)
 
-    async def is_employee_active_on_date(
-        self, employee_id: UUID, check_date: date
-    ) -> bool:
+    async def is_employee_active_on_date(self, employee_id: UUID, check_date: date) -> bool:
         """
         Check if employee is active on a specific date
         Returns True if employee has an ACTIVE status on that date

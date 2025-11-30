@@ -36,13 +36,17 @@ app/modules/{module_name}/
 │   └── services.py     # Domain services
 ├── infrastructure/      # Technical implementations
 │   ├── models.py       # ORM models
-│   └── repository.py   # Repository implementation
+│   ├── repository.py   # Repository implementation
+│   └── adapters.py     # ACL adapters for other module facades
 ├── application/         # Use cases (CQRS)
 │   ├── commands.py     # Command definitions
 │   ├── queries.py      # Query definitions
 │   └── handlers.py     # Command/Query handlers
-├── api/                 # HTTP endpoints
-│   └── endpoints.py    # FastAPI routes
+├── api/                 # Inter-module communication
+│   └── facade.py       # Public API for other modules (ACL)
+├── presentation/        # HTTP endpoints
+│   ├── endpoints.py    # FastAPI routes
+│   └── views.py        # Request/response models
 └── tests/               # Module tests
     ├── conftest.py     # Test fixtures
     ├── test_domain.py  # Domain layer tests
@@ -67,9 +71,16 @@ app/modules/{module_name}/
    - Concrete implementations in infrastructure layer
    - Dependency inversion principle
 
-4. **Dependency Injection**
+4. **Anti-Corruption Layer (ACL) Pattern**
+   - Each module exposes a Facade in its `api/` layer
+   - Other modules access it through Adapters in their `infrastructure/adapters.py`
+   - Adapters translate between module boundaries
+   - Prevents coupling between bounded contexts
+
+5. **Dependency Injection**
    - FastAPI's dependency injection for database sessions
    - Repository injection into handlers
+   - Facade injection into adapters
 
 ## Current Implementation Status
 
@@ -651,18 +662,888 @@ docker compose exec backend rm -rf path/to/file
 
 To enable SQL query logging, set `echo=True` in database.py engine configuration.
 
+## How to Create a New Module
+
+### Step-by-Step Guide
+
+Follow this systematic approach when creating a new module in the payroll manager system:
+
+#### 1. Create Module Structure
+
+Create the following directory structure under `backend/app/modules/{module_name}/`:
+
+```bash
+backend/app/modules/{module_name}/
+├── domain/
+│   ├── __init__.py
+│   ├── models.py           # Aggregate roots and entities
+│   ├── value_objects.py    # Immutable value objects
+│   ├── repository.py       # Repository interface (abstract)
+│   └── services.py         # Domain services
+├── infrastructure/
+│   ├── __init__.py
+│   ├── models.py           # SQLAlchemy ORM models
+│   ├── repository.py       # Repository implementation
+│   ├── read_model.py       # Read-side models for queries
+│   └── adapters.py         # ACL adapters for other module facades
+├── application/
+│   ├── __init__.py
+│   ├── commands.py         # Command definitions (write operations)
+│   ├── queries.py          # Query definitions (read operations)
+│   └── handlers.py         # Command and query handlers
+├── api/
+│   ├── __init__.py
+│   └── facade.py           # Public facade for inter-module communication
+├── presentation/
+│   ├── __init__.py
+│   ├── endpoints.py        # FastAPI routes
+│   └── views.py            # Request/response models (Pydantic)
+└── tests/
+    ├── __init__.py
+    ├── conftest.py         # Test fixtures
+    ├── test_domain.py      # Domain layer tests
+    ├── test_api.py         # API integration tests
+    └── test_facade.py      # Facade integration tests
+```
+
+#### 2. Domain Layer (Start Here)
+
+**a. Define Value Objects** (`domain/value_objects.py`)
+- Create immutable value objects for concepts without identity
+- Use `@dataclass(frozen=True)` for immutability
+- Add validation in `__post_init__`
+- Examples: Status enums, DateRange, Money, Rules
+
+**b. Define Aggregate Roots** (`domain/models.py`)
+- Create main entities with identity (UUID)
+- Implement business logic as methods
+- Ensure invariants are always maintained
+- Use value objects for complex attributes
+- Keep entities free from infrastructure concerns
+
+**c. Define Repository Interface** (`domain/repository.py`)
+- Create abstract base class using `ABC`
+- Define async methods for data access
+- Use domain entities as return types
+- Keep interface focused on business needs
+
+**d. Define Domain Services** (`domain/services.py`)
+- Create services for operations spanning multiple entities
+- Implement complex business rules
+- Keep services stateless
+- Use dependency injection for repositories
+
+#### 3. Infrastructure Layer
+
+**a. Create ORM Models** (`infrastructure/models.py`)
+- Define SQLAlchemy models with `declarative_base()`
+- Map to database tables
+- Define relationships and constraints
+- Use proper column types and indexes
+
+**b. Implement Repository** (`infrastructure/repository.py`)
+- Implement the domain repository interface
+- Convert between ORM models and domain entities
+- Use async/await for all database operations
+- Handle relationship loading carefully (avoid MissingGreenlet errors)
+
+**c. Create Read Models** (`infrastructure/read_model.py`)
+- Define lightweight models for query operations
+- Use for list views and reporting
+- Separate from write-side entities
+
+#### 4. Application Layer (CQRS)
+
+**a. Define Commands** (`application/commands.py`)
+- Create dataclasses for write operations
+- Include all required data for the operation
+- One command per business action
+
+**b. Define Queries** (`application/queries.py`)
+- Create dataclasses for read operations
+- Include filter criteria and pagination
+- One query per data retrieval need
+
+**c. Implement Handlers** (`application/handlers.py`)
+- One handler per command/query
+- Handlers orchestrate domain services and repositories
+- Implement validation and error handling
+- Use async/await for database operations
+
+#### 5. API Layer (Inter-Module Communication)
+
+**a. Define Facade Interface** (`api/facade.py`)
+- **IMPORTANT**: Every facade MUST have an abstract interface (ABC)
+- Create a facade interface defining the public API contract
+- Implement the interface in a concrete facade class
+- Define methods for operations other modules can use
+- Use DTOs (Data Transfer Objects) for data exchange
+- Keep facade interface stable and versioned
+- This is the **only** entry point for other modules
+
+**Example:**
+```python
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from uuid import UUID
+from datetime import date
+
+@dataclass
+class EmployeeDTO:
+    id: UUID
+    first_name: str
+    last_name: str
+    email: str
+
+class IEmployeeFacade(ABC):
+    @abstractmethod
+    async def get_employee(self, employee_id: UUID) -> EmployeeDTO | None:
+        pass
+
+    @abstractmethod
+    async def is_employee_active(self, employee_id: UUID, date: date) -> bool:
+        pass
+
+class EmployeeFacade(IEmployeeFacade):
+    def __init__(self, repository: EmployeeRepository):
+        self.repository = repository
+
+    async def get_employee(self, employee_id: UUID) -> EmployeeDTO | None:
+        employee = await self.repository.get_by_id(employee_id)
+        if not employee:
+            return None
+        return EmployeeDTO(
+            id=employee.id,
+            first_name=employee.first_name,
+            last_name=employee.last_name,
+            email=employee.email
+        )
+
+    async def is_employee_active(self, employee_id: UUID, date: date) -> bool:
+        employee = await self.repository.get_by_id(employee_id)
+        return employee.is_active_at(date) if employee else False
+```
+
+#### 6. Infrastructure - ACL Adapters
+
+**a. Create Adapters** (`infrastructure/adapters.py`)
+- **IMPORTANT**: Every adapter MUST have an abstract interface (ABC)
+- When Module B needs data from Module A, create an adapter in Module B
+- Adapter uses Module A's facade **interface** (not concrete implementation)
+- Adapter translates between Module A's DTOs and Module B's needs
+- This is the **Anti-Corruption Layer (ACL)**
+- Using interfaces enables mocking in tests without touching real module data
+
+**Example (in Contract module using Employee facade):**
+```python
+from abc import ABC, abstractmethod
+from app.modules.employee.api.facade import IEmployeeFacade, EmployeeDTO
+from uuid import UUID
+from datetime import date
+
+class IEmployeeAdapter(ABC):
+    @abstractmethod
+    async def validate_employee_exists(self, employee_id: UUID) -> bool:
+        pass
+
+    @abstractmethod
+    async def validate_employee_active(self, employee_id: UUID, date: date) -> bool:
+        pass
+
+class EmployeeAdapter(IEmployeeAdapter):
+    def __init__(self, employee_facade: IEmployeeFacade):
+        self.employee_facade = employee_facade
+
+    async def validate_employee_exists(self, employee_id: UUID) -> bool:
+        employee = await self.employee_facade.get_employee(employee_id)
+        return employee is not None
+
+    async def validate_employee_active(self, employee_id: UUID, date: date) -> bool:
+        return await self.employee_facade.is_employee_active(employee_id, date)
+```
+
+**Key Points for Facades and Adapters:**
+- ✅ **Every facade MUST have an interface (ABC)** - enables mocking and loose coupling
+- ✅ **Every adapter MUST have an interface (ABC)** - enables test isolation
+- ✅ **Adapters depend on facade interfaces, not concrete implementations**
+- ✅ **In tests, ALWAYS mock adapters** - prevents cross-module data contamination
+- ✅ **Example**: Module C uses Module A and B → Module C has adapters for A and B → Module C tests mock both adapters
+
+#### 7. Presentation Layer (HTTP API)
+
+**a. Define Views** (`presentation/views.py`)
+- Create Pydantic models for request/response
+- Use proper validation
+- Define separate models for create, update, and response
+- Follow REST conventions
+
+**b. Implement Endpoints** (`presentation/endpoints.py`)
+- Create FastAPI router
+- Define RESTful routes
+- Use dependency injection for database sessions
+- Call appropriate handlers
+- Return proper HTTP status codes
+- Handle exceptions gracefully
+
+#### 8. Write Tests
+
+**a. Domain Tests** (`tests/test_domain.py`)
+- Test entity creation and validation
+- Test business logic in domain services
+- Test value object validation
+- Test edge cases and error conditions
+- Keep tests independent and isolated
+
+**b. API Tests** (`tests/test_api.py`)
+- Test all endpoints (happy paths)
+- Test error cases (validation, not found, etc.)
+- Test integration between layers
+- Use fixtures for test data setup
+
+**c. Test Fixtures** (`tests/conftest.py`)
+- Create reusable fixtures for database sessions
+- Create fixtures for test data
+- Use `pytest.mark.asyncio` for async tests
+
+**d. Facade Tests** (`tests/test_facade.py`)
+- Test facade operations
+- Test DTO conversions
+- Test inter-module contracts
+- Mock dependencies when needed
+
+**e. Testing with Mocked Adapters** (`tests/test_*.py`)
+- **CRITICAL**: When Module C uses Module A and Module B through adapters, ALWAYS mock the adapters in Module C's tests
+- This prevents tests from interacting with real data from other modules
+- Use adapter interfaces to create mock implementations
+- Each module's tests should be completely isolated from other modules
+- Example: If Contract module uses EmployeeAdapter, mock IEmployeeAdapter in contract tests
+
+**Example (mocking adapter in tests):**
+```python
+import pytest
+from unittest.mock import AsyncMock
+from uuid import uuid4
+from datetime import date
+
+from app.modules.contract.infrastructure.adapters import IEmployeeAdapter
+from app.modules.contract.application.handlers import CreateContractHandler
+
+class MockEmployeeAdapter(IEmployeeAdapter):
+    async def validate_employee_exists(self, employee_id: UUID) -> bool:
+        return True  # Mock: always return True for tests
+
+    async def validate_employee_active(self, employee_id: UUID, date: date) -> bool:
+        return True  # Mock: always return True for tests
+
+@pytest.mark.asyncio
+async def test_create_contract_with_mocked_employee(db_session):
+    # Use mocked adapter instead of real one
+    mock_employee_adapter = MockEmployeeAdapter()
+    repository = SQLAlchemyContractRepository(db_session)
+    handler = CreateContractHandler(repository, mock_employee_adapter)
+
+    # Test contract creation without touching Employee module data
+    command = CreateContractCommand(
+        employee_id=uuid4(),
+        contract_type="fixed_monthly",
+        # ... other fields
+    )
+
+    contract = await handler.handle(command)
+    assert contract.id is not None
+```
+
+#### 9. Database Migration
+
+**a. Create Migration**
+```bash
+task migrate-create -- "add_{module_name}_tables"
+```
+
+**b. Review and Edit Migration**
+- Check auto-generated migration
+- Add missing indexes
+- Add constraints
+- Test upgrade and downgrade
+
+**c. Run Migration**
+```bash
+task migrate
+```
+
+#### 10. Register Module
+
+**a. Add to API Router** (`backend/app/api/v1/router.py`)
+```python
+from app.modules.{module_name}.presentation.endpoints import router as {module_name}_router
+
+api_router.include_router(
+    {module_name}_router,
+    prefix="/{module_name}",
+    tags=["{module_name}"]
+)
+```
+
+**b. Add Task Commands** (`Taskfile.yml`)
+```yaml
+test-{module_name}:
+  desc: Run {module_name} module tests
+  cmds:
+    - docker compose exec backend pytest app/modules/{module_name}/tests/ -v
+```
+
+#### 11. Update Documentation
+
+- Update this `claude.md` file with:
+  - Module status (✅ or TODO)
+  - Domain layer details
+  - Infrastructure details
+  - Application layer (CQRS)
+  - API endpoints
+  - Business rules
+  - Tests coverage
+  - Database schema
+
+### Inter-Module Communication Pattern
+
+The system uses the **Anti-Corruption Layer (ACL)** pattern to maintain clean boundaries between bounded contexts. This ensures modules remain independent and can evolve separately.
+
+#### Architecture Overview
+
+```
+Module A                           Module B
+┌─────────────────────┐           ┌─────────────────────┐
+│ Domain              │           │ Domain              │
+│ Application         │           │ Application         │
+│                     │           │                     │
+│ API Layer           │           │ Infrastructure      │
+│ ┌─────────────────┐ │           │ ┌─────────────────┐ │
+│ │ ModuleAFacade   │◄├───────────┤─│ ModuleAAdapter  │ │
+│ │ (Public API)    │ │           │ │ (ACL)           │ │
+│ └─────────────────┘ │           │ └─────────────────┘ │
+│                     │           │                     │
+│ Presentation        │           │ Presentation        │
+└─────────────────────┘           └─────────────────────┘
+```
+
+#### How It Works
+
+1. **Module A exposes a Facade** (`app/modules/module_a/api/facade.py`)
+   - Defines DTOs for data exchange
+   - Exposes only necessary operations
+   - Hides internal implementation details
+   - Provides stable, versioned interface
+
+2. **Module B creates an Adapter** (`app/modules/module_b/infrastructure/adapters.py`)
+   - Uses Module A's facade
+   - Translates DTOs to Module B's domain concepts
+   - Provides Module B-specific interface
+   - Acts as Anti-Corruption Layer
+
+#### Rules for Inter-Module Communication
+
+1. **NEVER access another module's:**
+   - Database tables directly
+   - Repository implementations
+   - Domain entities
+   - Application handlers
+   - Internal services
+
+2. **ALWAYS communicate through:**
+   - Facades (api/facade.py) as the public interface
+   - Adapters (infrastructure/adapters.py) as the consumer
+   - DTOs for data transfer
+
+3. **Facade Design Guidelines:**
+   - Return DTOs, not domain entities
+   - Keep interface minimal and focused
+   - Version breaking changes
+   - Don't expose internal state
+
+4. **Adapter Design Guidelines:**
+   - Located in the consuming module's infrastructure
+   - Translates external DTOs to internal concepts
+   - Handles errors from external module
+   - Can combine multiple facade calls
+
+#### Example: Contract Module Using Employee Module
+
+**Module A: Employee Facade** (`app/modules/employee/api/facade.py`)
+```python
+from dataclasses import dataclass
+from uuid import UUID
+from datetime import date
+
+@dataclass
+class EmployeeDTO:
+    id: UUID
+    first_name: str
+    last_name: str
+    email: str
+    is_active: bool
+
+class EmployeeFacade:
+    def __init__(self, repository: EmployeeRepository):
+        self.repository = repository
+
+    async def get_employee(self, employee_id: UUID) -> EmployeeDTO | None:
+        employee = await self.repository.get_by_id(employee_id)
+        if not employee:
+            return None
+        return EmployeeDTO(
+            id=employee.id,
+            first_name=employee.first_name,
+            last_name=employee.last_name,
+            email=employee.email,
+            is_active=employee.is_active_at(date.today())
+        )
+
+    async def is_employee_active(self, employee_id: UUID, check_date: date) -> bool:
+        employee = await self.repository.get_by_id(employee_id)
+        return employee.is_active_at(check_date) if employee else False
+```
+
+**Module B: Employee Adapter** (`app/modules/contract/infrastructure/adapters.py`)
+```python
+from app.modules.employee.api.facade import EmployeeFacade
+from uuid import UUID
+from datetime import date
+
+class EmployeeAdapter:
+    def __init__(self, employee_facade: EmployeeFacade):
+        self.employee_facade = employee_facade
+
+    async def validate_employee_exists(self, employee_id: UUID) -> None:
+        employee = await self.employee_facade.get_employee(employee_id)
+        if not employee:
+            raise ValueError(f"Employee {employee_id} not found")
+
+    async def validate_employee_active_for_contract(
+        self,
+        employee_id: UUID,
+        contract_start_date: date
+    ) -> None:
+        is_active = await self.employee_facade.is_employee_active(
+            employee_id,
+            contract_start_date
+        )
+        if not is_active:
+            raise ValueError(
+                f"Employee {employee_id} is not active on {contract_start_date}"
+            )
+```
+
+**Using the Adapter in Contract Handler** (`app/modules/contract/application/handlers.py`)
+```python
+class CreateContractHandler:
+    def __init__(
+        self,
+        contract_repository: ContractRepository,
+        employee_adapter: EmployeeAdapter
+    ):
+        self.contract_repository = contract_repository
+        self.employee_adapter = employee_adapter
+
+    async def handle(self, command: CreateContractCommand) -> Contract:
+        # Validate employee exists and is active
+        await self.employee_adapter.validate_employee_exists(command.employee_id)
+        await self.employee_adapter.validate_employee_active_for_contract(
+            command.employee_id,
+            command.valid_from
+        )
+
+        # Create contract
+        contract = Contract(...)
+        return await self.contract_repository.save(contract)
+```
+
+#### Benefits of This Pattern
+
+1. **Loose Coupling**: Modules don't know about each other's internals
+2. **Independent Evolution**: Can change module internals without affecting others
+3. **Clear Boundaries**: Explicit about what's public vs private
+4. **Testability**: Easy to mock facades in tests
+5. **Domain Protection**: External concepts don't pollute your domain
+
+### Module Development Principles
+
+#### Domain-Driven Design Principles
+
+1. **Ubiquitous Language**
+   - Use business terminology consistently
+   - Same terms in code, docs, and conversations
+   - Avoid technical jargon in domain layer
+
+2. **Bounded Context Isolation**
+   - Each module is a bounded context
+   - Modules communicate ONLY through facades (api/facade.py)
+   - NEVER access another module's database, repository, or domain objects directly
+   - Use ACL adapters in infrastructure for external module dependencies
+
+3. **Aggregate Boundaries**
+   - One aggregate root per consistency boundary
+   - Changes to aggregate happen through aggregate root
+   - Use IDs to reference other aggregates
+
+4. **Value Objects Over Primitives**
+   - Use value objects instead of primitive types
+   - Encapsulate validation in value objects
+   - Make value objects immutable
+
+5. **Domain Services for Complex Logic**
+   - Use when logic spans multiple entities
+   - Keep services stateless
+   - Services use repository interfaces
+
+#### CQRS Principles
+
+1. **Separate Reads from Writes**
+   - Commands change state, return minimal data
+   - Queries read state, never modify
+   - Use different models for read and write if needed
+
+2. **One Handler Per Operation**
+   - Single Responsibility Principle
+   - Clear, focused handlers
+   - Easy to test and maintain
+
+3. **Explicit Operations**
+   - Commands represent user intent
+   - Clear naming: CreateEmployee, ApproveAbsence
+   - Include all necessary data in command
+
+#### Repository Pattern Principles
+
+1. **Interface in Domain, Implementation in Infrastructure**
+   - Domain defines what it needs
+   - Infrastructure provides implementation
+   - Dependency inversion principle
+
+2. **Domain Entities In, Domain Entities Out**
+   - Repository works with domain entities
+   - ORM conversion happens inside repository
+   - Keep domain layer pure
+
+3. **Async All The Way**
+   - Use async/await for all database operations
+   - Avoid blocking calls
+   - Be careful with relationship loading
+
+#### Testing Principles
+
+1. **Co-locate Tests with Code**
+   - Tests live in module's tests/ directory
+   - Easy to find and maintain
+   - Module ownership of test quality
+
+2. **Independent and Isolated**
+   - Each test can run alone
+   - No shared state between tests
+   - Use fixtures for setup
+
+3. **Test Behavior, Not Implementation**
+   - Focus on what, not how
+   - Test business rules
+   - Avoid testing framework code
+
+4. **Coverage Targets**
+   - 100% test coverage goal
+   - Test happy paths and error cases
+   - Test edge cases and validation
+
+5. **Mock External Dependencies**
+   - **CRITICAL**: Always mock adapters in module tests
+   - Use adapter interfaces (ABC) to create mocks
+   - Example: Module C tests should mock adapters for modules A and B
+   - This ensures tests don't interact with real data from other modules
+   - Tests should be completely isolated per module
+
+#### Code Quality Principles
+
+1. **No Comments in Code**
+   - Code should be self-documenting
+   - Use clear, descriptive names
+   - Refactor complex code instead of commenting
+
+2. **Type Hints Everywhere**
+   - All function signatures have types
+   - Helps catch errors early
+   - Serves as documentation
+
+3. **Keep Functions Small**
+   - One purpose per function
+   - Easy to understand and test
+   - Extract complex logic to helpers
+
+4. **Error Handling**
+   - Validate at boundaries (API, domain services)
+   - Use specific exceptions
+   - Let exceptions propagate with context
+
+#### Anti-Corruption Layer (ACL) Principles
+
+1. **Facade as Public Contract**
+   - Each module exposes one facade in api/facade.py
+   - Facade is the ONLY way other modules can access functionality
+   - Use DTOs for all data exchange
+   - Never expose domain entities directly
+
+2. **Adapter as Translation Layer**
+   - Consumer module creates adapter in infrastructure/adapters.py
+   - Adapter translates external DTOs to internal concepts
+   - Adapter provides module-specific interface
+   - Multiple adapters can use the same facade
+
+3. **Strict Isolation**
+   - No direct database access across modules
+   - No direct repository access across modules
+   - No sharing of domain entities between modules
+   - Communication only through facade → adapter
+
+4. **Versioning and Stability**
+   - Keep facade interface stable
+   - Version breaking changes explicitly
+   - Deprecate old methods before removing
+   - Document facade contracts clearly
+
+#### Database Principles
+
+1. **Migrations for All Changes**
+   - Never modify database manually
+   - All changes through Alembic migrations
+   - Test upgrade and downgrade
+
+2. **Proper Indexing**
+   - Index foreign keys
+   - Index frequently queried columns
+   - Consider query patterns
+
+3. **Avoid N+1 Queries**
+   - Use eager loading when needed
+   - Be mindful of relationship loading
+   - Use read models for complex queries
+
+4. **Handle Async Carefully**
+   - Watch for MissingGreenlet errors
+   - Use explicit queries for updates
+   - Refresh objects after flush when needed
+
+### Common Patterns and Examples
+
+#### Creating an Aggregate Root
+
+```python
+from dataclasses import dataclass, field
+from uuid import UUID, uuid4
+from datetime import date
+
+@dataclass
+class MyEntity:
+    id: UUID = field(default_factory=uuid4)
+    name: str
+    status: MyStatus
+    created_at: date = field(default_factory=date.today)
+
+    def change_status(self, new_status: MyStatus) -> None:
+        self._validate_status_transition(new_status)
+        self.status = new_status
+
+    def _validate_status_transition(self, new_status: MyStatus) -> None:
+        # Business validation logic
+        pass
+```
+
+#### Creating a Value Object
+
+```python
+from dataclasses import dataclass
+from enum import Enum
+
+class MyStatusType(Enum):
+    PENDING = "pending"
+    ACTIVE = "active"
+    CLOSED = "closed"
+
+@dataclass(frozen=True)
+class MyStatus:
+    status_type: MyStatusType
+    reason: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.status_type == MyStatusType.CLOSED and not self.reason:
+            raise ValueError("Closed status requires a reason")
+```
+
+#### Creating a Repository Interface
+
+```python
+from abc import ABC, abstractmethod
+from uuid import UUID
+
+class MyEntityRepository(ABC):
+    @abstractmethod
+    async def save(self, entity: MyEntity) -> MyEntity:
+        pass
+
+    @abstractmethod
+    async def get_by_id(self, entity_id: UUID) -> MyEntity | None:
+        pass
+
+    @abstractmethod
+    async def list_all(self) -> list[MyEntity]:
+        pass
+```
+
+#### Creating a Command Handler
+
+```python
+from dataclasses import dataclass
+from uuid import UUID
+
+@dataclass
+class CreateMyEntityCommand:
+    name: str
+    status_type: str
+
+class CreateMyEntityHandler:
+    def __init__(self, repository: MyEntityRepository):
+        self.repository = repository
+
+    async def handle(self, command: CreateMyEntityCommand) -> MyEntity:
+        status = MyStatus(
+            status_type=MyStatusType(command.status_type)
+        )
+        entity = MyEntity(
+            name=command.name,
+            status=status
+        )
+        return await self.repository.save(entity)
+```
+
+#### Creating API Endpoints (Presentation Layer)
+
+```python
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+router = APIRouter()
+
+@router.post("/", response_model=MyEntityResponse, status_code=status.HTTP_201_CREATED)
+async def create_entity(
+    request: CreateMyEntityRequest,
+    db: AsyncSession = Depends(get_db)
+) -> MyEntityResponse:
+    repository = SQLAlchemyMyEntityRepository(db)
+    handler = CreateMyEntityHandler(repository)
+
+    command = CreateMyEntityCommand(
+        name=request.name,
+        status_type=request.status_type
+    )
+
+    entity = await handler.handle(command)
+    return MyEntityResponse.from_entity(entity)
+```
+
+#### Creating a Facade (API Layer)
+
+```python
+from dataclasses import dataclass
+from uuid import UUID
+from datetime import date
+
+@dataclass
+class MyEntityDTO:
+    id: UUID
+    name: str
+    status: str
+
+class MyModuleFacade:
+    def __init__(self, repository: MyEntityRepository):
+        self.repository = repository
+
+    async def get_entity(self, entity_id: UUID) -> MyEntityDTO | None:
+        entity = await self.repository.get_by_id(entity_id)
+        if not entity:
+            return None
+        return MyEntityDTO(
+            id=entity.id,
+            name=entity.name,
+            status=entity.status.status_type.value
+        )
+
+    async def validate_entity_exists(self, entity_id: UUID) -> bool:
+        entity = await self.repository.get_by_id(entity_id)
+        return entity is not None
+```
+
+#### Creating an ACL Adapter (Infrastructure Layer)
+
+```python
+from app.modules.my_module.api.facade import MyModuleFacade, MyEntityDTO
+from uuid import UUID
+
+class MyModuleAdapter:
+    def __init__(self, facade: MyModuleFacade):
+        self.facade = facade
+
+    async def get_entity_name(self, entity_id: UUID) -> str | None:
+        dto = await self.facade.get_entity(entity_id)
+        return dto.name if dto else None
+
+    async def ensure_entity_exists(self, entity_id: UUID) -> None:
+        if not await self.facade.validate_entity_exists(entity_id):
+            raise ValueError(f"Entity {entity_id} does not exist")
+```
+
+### Checklist for New Module
+
+Use this checklist to ensure completeness:
+
+- [ ] Domain layer complete
+  - [ ] Value objects defined
+  - [ ] Aggregate roots defined
+  - [ ] Repository interface defined
+  - [ ] Domain services implemented
+- [ ] Infrastructure layer complete
+  - [ ] ORM models created
+  - [ ] Repository implemented
+  - [ ] Read models created (if needed)
+  - [ ] ACL adapter interfaces (ABC) created (if module depends on other modules)
+  - [ ] ACL adapter implementations created (if module depends on other modules)
+- [ ] Application layer complete
+  - [ ] Commands defined
+  - [ ] Queries defined
+  - [ ] Handlers implemented
+- [ ] API layer complete (Inter-module communication)
+  - [ ] Facade interface (ABC) defined
+  - [ ] Facade implementation created with DTOs
+  - [ ] Public methods defined
+  - [ ] Facade interface stable
+- [ ] Presentation layer complete (HTTP API)
+  - [ ] Request/response views defined
+  - [ ] Endpoints implemented
+  - [ ] Proper status codes used
+- [ ] Tests complete
+  - [ ] Domain tests written
+  - [ ] API tests written
+  - [ ] Facade tests written
+  - [ ] Adapter mocks created for cross-module dependencies
+  - [ ] Tests use mocked adapters (no real data from other modules)
+  - [ ] All tests passing
+  - [ ] 100% coverage achieved
+- [ ] Database migration complete
+  - [ ] Migration created
+  - [ ] Migration tested
+  - [ ] Indexes added
+- [ ] Integration complete
+  - [ ] Module registered in API router
+  - [ ] Task commands added
+  - [ ] Documentation updated
+
 ## Contributing Guidelines
 
-When adding a new module:
-
-1. Create module structure following DDD pattern
-2. Start with domain layer (models, value objects, services)
-3. Implement infrastructure (ORM, repository)
-4. Create application layer (CQRS handlers)
-5. Add API endpoints
-6. Write tests (domain and API)
-7. Create migration for database changes
-8. Update this documentation
+When adding a new module, follow the step-by-step guide above and ensure all checklist items are completed.
 
 ## Important Files
 

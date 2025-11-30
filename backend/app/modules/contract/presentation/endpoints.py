@@ -1,19 +1,12 @@
 from datetime import date
 from decimal import Decimal
-from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.shared.infrastructure.pagination import PaginatedResponse, create_paginated_response
-from app.modules.contract.api.views import (
-    ContractDetailView,
-    ContractListResponse,
-    ContractListView,
-)
 from app.modules.contract.application.commands import (
     ActivateContractCommand,
     CancelContractCommand,
@@ -39,6 +32,12 @@ from app.modules.contract.application.queries import (
 from app.modules.contract.domain.value_objects import ContractType
 from app.modules.contract.infrastructure.read_model import ContractReadModel
 from app.modules.contract.infrastructure.repository import SQLAlchemyContractRepository
+from app.modules.contract.presentation.views import (
+    ContractDetailView,
+    ContractListResponse,
+    ContractListView,
+)
+from app.shared.infrastructure.pagination import PaginatedResponse, create_paginated_response
 
 router = APIRouter()
 

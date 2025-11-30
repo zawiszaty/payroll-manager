@@ -1,7 +1,7 @@
-from typing import Generic, TypeVar, Optional, List
-from pydantic import BaseModel, Field
 from math import ceil
+from typing import Generic, List, Optional, TypeVar
 
+from pydantic import BaseModel, Field
 
 T = TypeVar("T")
 
@@ -32,7 +32,9 @@ class PaginatedResponse(BaseModel, Generic[T]):
 
     items: List[T] = Field(..., description="List of items for the current page")
     metadata: PaginationMetadata = Field(..., description="Pagination metadata")
-    links: PaginationLinks = Field(..., serialization_alias="_links", description="HAL-style navigation links")
+    links: PaginationLinks = Field(
+        ..., serialization_alias="_links", description="HAL-style navigation links"
+    )
 
     model_config = {"populate_by_name": True}
 

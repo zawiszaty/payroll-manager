@@ -1,15 +1,15 @@
 from typing import List, Optional, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.contract.api.views import (
+from app.modules.contract.infrastructure.models import ContractORM
+from app.modules.contract.presentation.views import (
     ContractDetailView,
     ContractListView,
     ContractTermsView,
 )
-from app.modules.contract.infrastructure.models import ContractORM
 
 
 class ContractReadModel:

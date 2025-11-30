@@ -1,16 +1,16 @@
 from typing import List, Optional, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.modules.payroll.api.views import (
+from app.modules.payroll.infrastructure.models import PayrollORM
+from app.modules.payroll.presentation.views import (
     PayrollDetailView,
     PayrollLineView,
     PayrollListView,
 )
-from app.modules.payroll.infrastructure.models import PayrollORM
 
 
 class PayrollReadModel:
@@ -71,12 +71,7 @@ class PayrollReadModel:
         total_count = count_result.scalar_one()
 
         # Get paginated items
-        stmt = (
-            select(PayrollORM)
-            .offset(skip)
-            .limit(limit)
-            .order_by(PayrollORM.created_at.desc())
-        )
+        stmt = select(PayrollORM).offset(skip).limit(limit).order_by(PayrollORM.created_at.desc())
         result = await self.session.execute(stmt)
         orms = result.scalars().all()
 

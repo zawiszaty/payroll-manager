@@ -1,8 +1,8 @@
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.modules.payroll.domain.value_objects import PayrollStatus
 
@@ -10,7 +10,7 @@ from app.modules.payroll.domain.value_objects import PayrollStatus
 class DomainEvent(BaseModel):
     """Base class for all domain events"""
 
-    occurred_at: datetime = datetime.utcnow()
+    occurred_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class PayrollCreatedEvent(DomainEvent):

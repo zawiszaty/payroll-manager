@@ -2,11 +2,11 @@ from datetime import date
 from typing import List, Optional, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.compensation.api.views import BonusView, RateView
 from app.modules.compensation.infrastructure.models import BonusORM, RateORM
+from app.modules.compensation.presentation.views import BonusView, RateView
 
 
 class RateReadModel:

@@ -5,16 +5,15 @@ They are used by PayrollDataGatheringAdapter to gather data from other modules
 """
 
 from datetime import date
-from decimal import Decimal
 from typing import Any, Dict, List
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.absence.infrastructure.facade import AbsenceModuleFacade
-from app.modules.compensation.infrastructure.facade import CompensationModuleFacade
-from app.modules.contract.infrastructure.facade import ContractModuleFacade
-from app.modules.employee.infrastructure.facade import EmployeeModuleFacade
+from app.modules.absence.api.facade import AbsenceModuleFacade
+from app.modules.compensation.api.facade import CompensationModuleFacade
+from app.modules.contract.api.facade import ContractModuleFacade
+from app.modules.employee.api.facade import EmployeeModuleFacade
 from app.shared.domain.value_objects import Money
 
 
@@ -33,9 +32,7 @@ class EmployeeDataFacade:
 
     async def is_active_on_date(self, employee_id: UUID, check_date: date) -> bool:
         """Check if employee is active on a specific date"""
-        return await self.employee_facade.is_employee_active_on_date(
-            employee_id, check_date
-        )
+        return await self.employee_facade.is_employee_active_on_date(employee_id, check_date)
 
 
 class ContractDataFacade:
@@ -51,9 +48,7 @@ class ContractDataFacade:
         """Check if employee has active contract"""
         return await self.contract_facade.has_active_contract(employee_id, check_date)
 
-    async def get_contract_data(
-        self, employee_id: UUID, check_date: date
-    ) -> Dict[str, Any]:
+    async def get_contract_data(self, employee_id: UUID, check_date: date) -> Dict[str, Any]:
         """
         Get contract data for payroll calculation
         Returns a dictionary with contract details

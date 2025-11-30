@@ -6,7 +6,7 @@ import uuid
 
 from sqlalchemy import Column, Date, DateTime, ForeignKey, Numeric, String, Text
 from sqlalchemy import Enum as SQLEnum
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -57,9 +57,7 @@ class PayrollORM(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
-    lines = relationship(
-        "PayrollLineORM", back_populates="payroll", cascade="all, delete-orphan"
-    )
+    lines = relationship("PayrollLineORM", back_populates="payroll", cascade="all, delete-orphan")
 
 
 class PayrollLineORM(Base):

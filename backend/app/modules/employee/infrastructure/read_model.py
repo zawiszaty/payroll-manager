@@ -1,16 +1,16 @@
 from typing import List, Optional, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.modules.employee.api.views import (
+from app.modules.employee.infrastructure.models import EmployeeORM
+from app.modules.employee.presentation.views import (
     EmployeeDetailView,
     EmployeeListView,
     EmploymentStatusView,
 )
-from app.modules.employee.infrastructure.models import EmployeeORM
 
 
 class EmployeeReadModel:
