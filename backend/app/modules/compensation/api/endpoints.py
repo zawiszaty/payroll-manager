@@ -3,11 +3,12 @@ from decimal import Decimal
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.shared.infrastructure.pagination import PaginatedResponse, create_paginated_response
 from app.modules.compensation.api.views import (
     BonusListResponse,
     BonusView,
@@ -105,15 +106,34 @@ async def get_rate(rate_id: UUID, db: AsyncSession = Depends(get_db)):
     return rate
 
 
-@router.get("/rates/", response_model=RateListResponse)
-async def list_rates(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)):
+@router.get("/rates/", response_model=PaginatedResponse[RateView])
+async def list_rates(
+    request: Request,
+    page: int = 1,
+    limit: int = 100,
+    db: AsyncSession = Depends(get_db),
+):
+    if page < 1:
+        raise HTTPException(status_code=400, detail="Page must be >= 1")
+    if limit < 1 or limit > 100:
+        raise HTTPException(status_code=400, detail="Limit must be between 1 and 100")
+
+    skip = (page - 1) * limit
+
     read_model = RateReadModel(db)
     handler = ListRatesHandler(read_model)
 
     query = ListRatesQuery(skip=skip, limit=limit)
-    rates = await handler.handle(query)
+    items, total_count = await handler.handle(query)
 
-    return RateListResponse(items=rates, total=len(rates))
+    base_url = str(request.url).split("?")[0]
+    return create_paginated_response(
+        items=items,
+        total_items=total_count,
+        page=page,
+        limit=limit,
+        base_url=base_url,
+    )
 
 
 @router.get("/rates/employee/{employee_id}", response_model=RateListResponse)
@@ -183,15 +203,34 @@ async def get_bonus(bonus_id: UUID, db: AsyncSession = Depends(get_db)):
     return bonus
 
 
-@router.get("/bonuses/", response_model=BonusListResponse)
-async def list_bonuses(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)):
+@router.get("/bonuses/", response_model=PaginatedResponse[BonusView])
+async def list_bonuses(
+    request: Request,
+    page: int = 1,
+    limit: int = 100,
+    db: AsyncSession = Depends(get_db),
+):
+    if page < 1:
+        raise HTTPException(status_code=400, detail="Page must be >= 1")
+    if limit < 1 or limit > 100:
+        raise HTTPException(status_code=400, detail="Limit must be between 1 and 100")
+
+    skip = (page - 1) * limit
+
     read_model = BonusReadModel(db)
     handler = ListBonusesHandler(read_model)
 
     query = ListBonusesQuery(skip=skip, limit=limit)
-    bonuses = await handler.handle(query)
+    items, total_count = await handler.handle(query)
 
-    return BonusListResponse(items=bonuses, total=len(bonuses))
+    base_url = str(request.url).split("?")[0]
+    return create_paginated_response(
+        items=items,
+        total_items=total_count,
+        page=page,
+        limit=limit,
+        base_url=base_url,
+    )
 
 
 @router.get("/bonuses/employee/{employee_id}", response_model=BonusListResponse)

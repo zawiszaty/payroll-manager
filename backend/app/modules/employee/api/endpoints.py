@@ -1,12 +1,13 @@
 from datetime import date
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.modules.employee.api.views import EmployeeDetailView, EmployeeListResponse
+from app.modules.employee.api.views import EmployeeDetailView, EmployeeListView
+from app.shared.infrastructure.pagination import PaginatedResponse, create_paginated_response
 from app.modules.employee.application.commands import (
     ChangeEmployeeStatusCommand,
     CreateEmployeeCommand,
@@ -91,15 +92,34 @@ async def get_employee(employee_id: UUID, db: AsyncSession = Depends(get_db)):
     return view
 
 
-@router.get("/", response_model=EmployeeListResponse)
-async def list_employees(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)):
+@router.get("/", response_model=PaginatedResponse[EmployeeListView])
+async def list_employees(
+    request: Request,
+    page: int = 1,
+    limit: int = 100,
+    db: AsyncSession = Depends(get_db),
+):
+    if page < 1:
+        raise HTTPException(status_code=400, detail="Page must be >= 1")
+    if limit < 1 or limit > 100:
+        raise HTTPException(status_code=400, detail="Limit must be between 1 and 100")
+
+    skip = (page - 1) * limit
+
     read_model = EmployeeReadModel(db)
     handler = ListEmployeesHandler(read_model)
 
     query = ListEmployeesQuery(skip=skip, limit=limit)
-    views = await handler.handle(query)
+    items, total_count = await handler.handle(query)
 
-    return EmployeeListResponse(items=views, total=len(views))
+    base_url = str(request.url).split("?")[0]
+    return create_paginated_response(
+        items=items,
+        total_items=total_count,
+        page=page,
+        limit=limit,
+        base_url=base_url,
+    )
 
 
 @router.put("/{employee_id}", response_model=EmployeeDetailView)

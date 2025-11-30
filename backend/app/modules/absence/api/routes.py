@@ -1,7 +1,7 @@
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -15,6 +15,7 @@ from app.modules.absence.api.schemas import (
     AbsenceListResponse,
     AbsenceResponse,
 )
+from app.shared.infrastructure.pagination import PaginatedResponse, create_paginated_response
 from app.modules.absence.application.commands import (
     ApproveAbsenceCommand,
     CancelAbsenceCommand,
@@ -128,13 +129,33 @@ async def get_absence(absence_id: UUID, session: AsyncSession = Depends(get_db))
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.get("/absences/", response_model=AbsenceListResponse)
-async def list_absences(session: AsyncSession = Depends(get_db)):
+@router.get("/absences/", response_model=PaginatedResponse[AbsenceResponse])
+async def list_absences(
+    request: Request,
+    page: int = 1,
+    limit: int = 100,
+    session: AsyncSession = Depends(get_db),
+):
+    if page < 1:
+        raise HTTPException(status_code=400, detail="Page must be >= 1")
+    if limit < 1 or limit > 100:
+        raise HTTPException(status_code=400, detail="Limit must be between 1 and 100")
+
+    skip = (page - 1) * limit
+
     absence_repo = SQLAlchemyAbsenceRepository(session)
     handler = ListAbsencesHandler(absence_repo)
-    absences = await handler.handle(ListAbsencesQuery())
+    absences, total_count = await handler.handle(ListAbsencesQuery(skip=skip, limit=limit))
     items = [_to_absence_response(absence) for absence in absences]
-    return AbsenceListResponse(items=items, total=len(items))
+
+    base_url = str(request.url).split("?")[0]
+    return create_paginated_response(
+        items=items,
+        total_items=total_count,
+        page=page,
+        limit=limit,
+        base_url=base_url,
+    )
 
 
 @router.get("/absences/employee/{employee_id}", response_model=AbsenceListResponse)
@@ -231,13 +252,33 @@ async def get_absence_balance(balance_id: UUID, session: AsyncSession = Depends(
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.get("/balances/", response_model=AbsenceBalanceListResponse)
-async def list_absence_balances(session: AsyncSession = Depends(get_db)):
+@router.get("/balances/", response_model=PaginatedResponse[AbsenceBalanceResponse])
+async def list_absence_balances(
+    request: Request,
+    page: int = 1,
+    limit: int = 100,
+    session: AsyncSession = Depends(get_db),
+):
+    if page < 1:
+        raise HTTPException(status_code=400, detail="Page must be >= 1")
+    if limit < 1 or limit > 100:
+        raise HTTPException(status_code=400, detail="Limit must be between 1 and 100")
+
+    skip = (page - 1) * limit
+
     balance_repo = SQLAlchemyAbsenceBalanceRepository(session)
     handler = ListAbsenceBalancesHandler(balance_repo)
-    balances = await handler.handle(ListAbsenceBalancesQuery())
+    balances, total_count = await handler.handle(ListAbsenceBalancesQuery(skip=skip, limit=limit))
     items = [_to_balance_response(balance) for balance in balances]
-    return AbsenceBalanceListResponse(items=items, total=len(items))
+
+    base_url = str(request.url).split("?")[0]
+    return create_paginated_response(
+        items=items,
+        total_items=total_count,
+        page=page,
+        limit=limit,
+        base_url=base_url,
+    )
 
 
 @router.get("/balances/employee/{employee_id}", response_model=AbsenceBalanceListResponse)

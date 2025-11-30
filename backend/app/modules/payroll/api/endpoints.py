@@ -1,12 +1,13 @@
 from datetime import date
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.modules.payroll.api.views import PayrollDetailView, PayrollListResponse
+from app.modules.payroll.api.views import PayrollDetailView, PayrollListView
+from app.shared.infrastructure.pagination import PaginatedResponse, create_paginated_response
 from app.modules.payroll.application.commands import (
     ApprovePayrollCommand,
     CalculatePayrollCommand,
@@ -105,28 +106,65 @@ async def get_payroll(payroll_id: UUID, db: AsyncSession = Depends(get_db)):
     return view
 
 
-@router.get("/", response_model=PayrollListResponse)
-async def list_payrolls(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)):
+@router.get("/", response_model=PaginatedResponse[PayrollListView])
+async def list_payrolls(
+    request: Request,
+    page: int = 1,
+    limit: int = 100,
+    db: AsyncSession = Depends(get_db),
+):
+    if page < 1:
+        raise HTTPException(status_code=400, detail="Page must be >= 1")
+    if limit < 1 or limit > 100:
+        raise HTTPException(status_code=400, detail="Limit must be between 1 and 100")
+
+    skip = (page - 1) * limit
+
     read_model = PayrollReadModel(db)
     handler = ListPayrollsHandler(read_model)
 
     query = ListPayrollsQuery(skip=skip, limit=limit)
-    views = await handler.handle(query)
+    items, total_count = await handler.handle(query)
 
-    return PayrollListResponse(items=views, total=len(views))
+    base_url = str(request.url).split("?")[0]
+    return create_paginated_response(
+        items=items,
+        total_items=total_count,
+        page=page,
+        limit=limit,
+        base_url=base_url,
+    )
 
 
-@router.get("/employee/{employee_id}", response_model=PayrollListResponse)
+@router.get("/employee/{employee_id}", response_model=PaginatedResponse[PayrollListView])
 async def list_payrolls_by_employee(
-    employee_id: UUID, skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)
+    employee_id: UUID,
+    request: Request,
+    page: int = 1,
+    limit: int = 100,
+    db: AsyncSession = Depends(get_db),
 ):
+    if page < 1:
+        raise HTTPException(status_code=400, detail="Page must be >= 1")
+    if limit < 1 or limit > 100:
+        raise HTTPException(status_code=400, detail="Limit must be between 1 and 100")
+
+    skip = (page - 1) * limit
+
     read_model = PayrollReadModel(db)
     handler = ListPayrollsByEmployeeHandler(read_model)
 
     query = ListPayrollsByEmployeeQuery(employee_id=employee_id, skip=skip, limit=limit)
-    views = await handler.handle(query)
+    items, total_count = await handler.handle(query)
 
-    return PayrollListResponse(items=views, total=len(views))
+    base_url = str(request.url).split("?")[0]
+    return create_paginated_response(
+        items=items,
+        total_items=total_count,
+        page=page,
+        limit=limit,
+        base_url=base_url,
+    )
 
 
 @router.post("/{payroll_id}/calculate", response_model=PayrollDetailView)

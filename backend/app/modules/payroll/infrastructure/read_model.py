@@ -1,7 +1,7 @@
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -64,7 +64,13 @@ class PayrollReadModel:
             updated_at=orm.updated_at.date() if orm.updated_at else None,
         )
 
-    async def list(self, skip: int = 0, limit: int = 100) -> List[PayrollListView]:
+    async def list(self, skip: int = 0, limit: int = 100) -> Tuple[List[PayrollListView], int]:
+        # Get total count
+        count_stmt = select(func.count()).select_from(PayrollORM)
+        count_result = await self.session.execute(count_stmt)
+        total_count = count_result.scalar_one()
+
+        # Get paginated items
         stmt = (
             select(PayrollORM)
             .offset(skip)
@@ -74,7 +80,7 @@ class PayrollReadModel:
         result = await self.session.execute(stmt)
         orms = result.scalars().all()
 
-        return [
+        items = [
             PayrollListView(
                 id=orm.id,
                 employee_id=orm.employee_id,
@@ -90,9 +96,21 @@ class PayrollReadModel:
             for orm in orms
         ]
 
+        return items, total_count
+
     async def list_by_employee(
         self, employee_id: UUID, skip: int = 0, limit: int = 100
-    ) -> List[PayrollListView]:
+    ) -> Tuple[List[PayrollListView], int]:
+        # Get total count for this employee
+        count_stmt = (
+            select(func.count())
+            .select_from(PayrollORM)
+            .where(PayrollORM.employee_id == employee_id)
+        )
+        count_result = await self.session.execute(count_stmt)
+        total_count = count_result.scalar_one()
+
+        # Get paginated items
         stmt = (
             select(PayrollORM)
             .where(PayrollORM.employee_id == employee_id)
@@ -103,7 +121,7 @@ class PayrollReadModel:
         result = await self.session.execute(stmt)
         orms = result.scalars().all()
 
-        return [
+        items = [
             PayrollListView(
                 id=orm.id,
                 employee_id=orm.employee_id,
@@ -118,3 +136,5 @@ class PayrollReadModel:
             )
             for orm in orms
         ]
+
+        return items, total_count
