@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from uuid import UUID
 
@@ -10,7 +10,7 @@ from app.modules.payroll.domain.value_objects import PayrollStatus
 class DomainEvent(BaseModel):
     """Base class for all domain events"""
 
-    occurred_at: datetime = datetime.utcnow()
+    occurred_at: datetime = datetime.now(UTC)
 
 
 class PayrollCreatedEvent(DomainEvent):

@@ -1,13 +1,11 @@
 from datetime import date
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.modules.payroll.api.views import PayrollDetailView, PayrollListView
-from app.shared.infrastructure.pagination import PaginatedResponse, create_paginated_response
 from app.modules.payroll.application.commands import (
     ApprovePayrollCommand,
     CalculatePayrollCommand,
@@ -38,6 +36,8 @@ from app.modules.payroll.infrastructure.adapters import (
 )
 from app.modules.payroll.infrastructure.read_model import PayrollReadModel
 from app.modules.payroll.infrastructure.repository import SQLAlchemyPayrollRepository
+from app.modules.payroll.presentation.views import PayrollDetailView, PayrollListView
+from app.shared.infrastructure.pagination import PaginatedResponse, create_paginated_response
 
 router = APIRouter()
 
@@ -99,9 +99,7 @@ async def get_payroll(payroll_id: UUID, db: AsyncSession = Depends(get_db)):
     view = await handler.handle(query)
 
     if not view:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Payroll not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payroll not found")
 
     return view
 
@@ -176,9 +174,7 @@ async def calculate_payroll(
     calculation_service = PayrollCalculationService(data_adapter)
     handler = CalculatePayrollHandler(repository, calculation_service)
 
-    command = CalculatePayrollCommand(
-        payroll_id=payroll_id, working_days=request.working_days
-    )
+    command = CalculatePayrollCommand(payroll_id=payroll_id, working_days=request.working_days)
 
     try:
         payroll = await handler.handle(command)

@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import List, Optional
 from uuid import UUID, uuid4
@@ -55,8 +55,8 @@ class Payroll:
         self.paid_at = paid_at
         self.payment_reference = payment_reference
         self.notes = notes
-        self.created_at = created_at or datetime.utcnow()
-        self.updated_at = updated_at or datetime.utcnow()
+        self.created_at = created_at or datetime.now(UTC)
+        self.updated_at = updated_at or datetime.now(UTC)
         self._domain_events: List = []
 
     @staticmethod
@@ -88,7 +88,7 @@ class Payroll:
             raise ValueError(f"Cannot add lines to payroll in {self.status} status")
 
         self.lines.append(line)
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(UTC)
 
     def calculate(self) -> None:
         """Calculate payroll totals using Money value objects"""
@@ -121,14 +121,14 @@ class Payroll:
             for line in self.lines
             if line.line_type.value in ["DEDUCTION", "ABSENCE_DEDUCTION"]
         ]
-        total_deductions: Money = deduction_lines[0] if deduction_lines else Money(Decimal("0"), currency)
+        total_deductions: Money = (
+            deduction_lines[0] if deduction_lines else Money(Decimal("0"), currency)
+        )
         for amount in deduction_lines[1:]:
             total_deductions = total_deductions + amount
 
         # Calculate total taxes
-        tax_lines = [
-            line.amount for line in self.lines if line.line_type.value == "TAX"
-        ]
+        tax_lines = [line.amount for line in self.lines if line.line_type.value == "TAX"]
         total_taxes: Money = tax_lines[0] if tax_lines else Money(Decimal("0"), currency)
         for amount in tax_lines[1:]:
             total_taxes = total_taxes + amount
@@ -143,7 +143,7 @@ class Payroll:
             net_pay=net_pay,
         )
 
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(UTC)
 
         self._add_domain_event(
             PayrollCalculatedEvent(
@@ -164,7 +164,7 @@ class Payroll:
 
         old_status = self.status
         self.status = PayrollStatus.PENDING_APPROVAL
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(UTC)
 
         self._add_domain_event(
             PayrollStatusChangedEvent(
@@ -180,8 +180,8 @@ class Payroll:
         old_status = self.status
         self.status = PayrollStatus.APPROVED
         self.approved_by = approved_by
-        self.approved_at = datetime.utcnow()
-        self.updated_at = datetime.utcnow()
+        self.approved_at = datetime.now(UTC)
+        self.updated_at = datetime.now(UTC)
 
         self._add_domain_event(
             PayrollApprovedEvent(
@@ -205,8 +205,8 @@ class Payroll:
 
         old_status = self.status
         self.status = PayrollStatus.PROCESSED
-        self.processed_at = datetime.utcnow()
-        self.updated_at = datetime.utcnow()
+        self.processed_at = datetime.now(UTC)
+        self.updated_at = datetime.now(UTC)
 
         self._add_domain_event(
             PayrollProcessedEvent(
@@ -231,8 +231,8 @@ class Payroll:
         old_status = self.status
         self.status = PayrollStatus.PAID
         self.payment_reference = payment_reference
-        self.paid_at = datetime.utcnow()
-        self.updated_at = datetime.utcnow()
+        self.paid_at = datetime.now(UTC)
+        self.updated_at = datetime.now(UTC)
 
         self._add_domain_event(
             PayrollPaidEvent(
@@ -257,7 +257,7 @@ class Payroll:
 
         old_status = self.status
         self.status = PayrollStatus.CANCELLED
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(UTC)
 
         self._add_domain_event(
             PayrollStatusChangedEvent(

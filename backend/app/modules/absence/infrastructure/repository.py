@@ -2,7 +2,7 @@ from datetime import date
 from typing import List, Optional, Tuple
 from uuid import UUID
 
-from sqlalchemy import and_, select, func
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.absence.domain.entities import Absence, AbsenceBalance
@@ -156,7 +156,10 @@ class SQLAlchemyAbsenceBalanceRepository(AbsenceBalanceRepository):
 
         # Get paginated items
         result = await self.session.execute(
-            select(AbsenceBalanceModel).offset(skip).limit(limit).order_by(AbsenceBalanceModel.created_at.desc())
+            select(AbsenceBalanceModel)
+            .offset(skip)
+            .limit(limit)
+            .order_by(AbsenceBalanceModel.created_at.desc())
         )
         models = result.scalars().all()
         items = [self._to_domain(model) for model in models]

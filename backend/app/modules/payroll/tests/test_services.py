@@ -5,8 +5,8 @@ from uuid import uuid4
 
 import pytest
 
-from app.modules.compensation.api.views import BonusView
 from app.modules.compensation.domain.value_objects import BonusType
+from app.modules.compensation.presentation.views import BonusView
 from app.modules.contract.domain.value_objects import ContractType
 from app.modules.payroll.domain.models import Payroll
 from app.modules.payroll.domain.services import PayrollCalculationService, PayrollPeriodService
@@ -17,14 +17,14 @@ from app.modules.payroll.domain.value_objects import (
     PayrollPeriod,
     PayrollPeriodType,
 )
-from app.modules.payroll.infrastructure.adapters import PayrollDataGatheringAdapter
+from app.modules.payroll.infrastructure.adapters import IPayrollDataGatheringAdapter
 from app.shared.domain.value_objects import Money
 
 
 @pytest.fixture
 def mock_adapter():
-    """Create a mock PayrollDataGatheringAdapter"""
-    adapter = Mock(spec=PayrollDataGatheringAdapter)
+    """Create a mock PayrollDataGatheringAdapter using the interface"""
+    adapter = Mock(spec=IPayrollDataGatheringAdapter)
     adapter.validate_payroll_eligibility = AsyncMock(return_value=True)
     adapter.gather_all_payroll_data = AsyncMock()
     adapter.calculate_absence_impact = AsyncMock()

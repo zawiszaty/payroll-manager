@@ -4,6 +4,7 @@ Exposes contract module capabilities to other modules
 This is the public interface for inter-module communication
 """
 
+from abc import ABC, abstractmethod
 from datetime import date
 from decimal import Decimal
 from typing import Optional
@@ -14,7 +15,44 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.contract.infrastructure.read_model import ContractReadModel
 
 
-class ContractModuleFacade:
+class IContractModuleFacade(ABC):
+    """
+    Interface for Contract module facade
+    Defines the public contract for inter-module communication
+    """
+
+    @abstractmethod
+    async def get_active_contract_for_employee(self, employee_id: UUID, check_date: date):
+        """
+        Get active contract for employee on a specific date
+        Returns the contract that is valid on the given date
+        """
+        pass
+
+    @abstractmethod
+    async def has_active_contract(self, employee_id: UUID, check_date: date) -> bool:
+        """Check if employee has an active contract on the given date"""
+        pass
+
+    @abstractmethod
+    async def get_contract_rate(self, employee_id: UUID, check_date: date) -> Optional[Decimal]:
+        """Get employee's contract rate for a specific date"""
+        pass
+
+    @abstractmethod
+    async def get_contract_type(self, employee_id: UUID, check_date: date) -> Optional[str]:
+        """Get employee's contract type for a specific date"""
+        pass
+
+    @abstractmethod
+    async def get_contract_hours_per_week(
+        self, employee_id: UUID, check_date: date
+    ) -> Optional[int]:
+        """Get contract hours per week (for hourly contracts)"""
+        pass
+
+
+class ContractModuleFacade(IContractModuleFacade):
     """
     Facade for Contract module
     Provides async methods for other modules to query contract data
@@ -24,9 +62,7 @@ class ContractModuleFacade:
         self.session = session
         self.read_model = ContractReadModel(session)
 
-    async def get_active_contract_for_employee(
-        self, employee_id: UUID, check_date: date
-    ):
+    async def get_active_contract_for_employee(self, employee_id: UUID, check_date: date):
         """
         Get active contract for employee on a specific date
         Returns the contract that is valid on the given date
@@ -40,25 +76,19 @@ class ContractModuleFacade:
 
         return None
 
-    async def has_active_contract(
-        self, employee_id: UUID, check_date: date
-    ) -> bool:
+    async def has_active_contract(self, employee_id: UUID, check_date: date) -> bool:
         """Check if employee has an active contract on the given date"""
         contract = await self.get_active_contract_for_employee(employee_id, check_date)
         return contract is not None
 
-    async def get_contract_rate(
-        self, employee_id: UUID, check_date: date
-    ) -> Optional[Decimal]:
+    async def get_contract_rate(self, employee_id: UUID, check_date: date) -> Optional[Decimal]:
         """Get employee's contract rate for a specific date"""
         contract = await self.get_active_contract_for_employee(employee_id, check_date)
         if contract:
             return contract.terms.rate_amount
         return None
 
-    async def get_contract_type(
-        self, employee_id: UUID, check_date: date
-    ) -> Optional[str]:
+    async def get_contract_type(self, employee_id: UUID, check_date: date) -> Optional[str]:
         """Get employee's contract type for a specific date"""
         contract = await self.get_active_contract_for_employee(employee_id, check_date)
         if contract:

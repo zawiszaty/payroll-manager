@@ -1,20 +1,12 @@
 from datetime import date
 from decimal import Decimal
-from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.shared.infrastructure.pagination import PaginatedResponse, create_paginated_response
-from app.modules.compensation.api.views import (
-    BonusListResponse,
-    BonusView,
-    RateListResponse,
-    RateView,
-)
 from app.modules.compensation.application.commands import CreateBonusCommand, CreateRateCommand
 from app.modules.compensation.application.handlers import (
     CreateBonusHandler,
@@ -42,6 +34,13 @@ from app.modules.compensation.infrastructure.repository import (
     SQLAlchemyBonusRepository,
     SQLAlchemyRateRepository,
 )
+from app.modules.compensation.presentation.views import (
+    BonusListResponse,
+    BonusView,
+    RateListResponse,
+    RateView,
+)
+from app.shared.infrastructure.pagination import PaginatedResponse, create_paginated_response
 
 router = APIRouter()
 

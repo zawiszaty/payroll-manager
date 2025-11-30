@@ -1,13 +1,11 @@
 from datetime import date
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.modules.employee.api.views import EmployeeDetailView, EmployeeListView
-from app.shared.infrastructure.pagination import PaginatedResponse, create_paginated_response
 from app.modules.employee.application.commands import (
     ChangeEmployeeStatusCommand,
     CreateEmployeeCommand,
@@ -24,6 +22,8 @@ from app.modules.employee.application.queries import GetEmployeeQuery, ListEmplo
 from app.modules.employee.domain.value_objects import EmploymentStatusType
 from app.modules.employee.infrastructure.read_model import EmployeeReadModel
 from app.modules.employee.infrastructure.repository import SQLAlchemyEmployeeRepository
+from app.modules.employee.presentation.views import EmployeeDetailView, EmployeeListView
+from app.shared.infrastructure.pagination import PaginatedResponse, create_paginated_response
 
 router = APIRouter()
 

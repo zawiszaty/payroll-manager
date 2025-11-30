@@ -1,4 +1,3 @@
-from datetime import date
 from uuid import uuid4
 
 import pytest
@@ -320,7 +319,7 @@ async def test_approve_payroll(client: AsyncClient):
 
     # Submit for approval first
     get_response = await client.get(f"/api/v1/payroll/{payroll_id}")
-    payroll_data = get_response.json()
+    get_response.json()
 
     # Manually submit for approval by updating status (not ideal but testing flow)
     # In real scenario, there would be a submit endpoint

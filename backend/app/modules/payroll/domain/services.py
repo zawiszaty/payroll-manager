@@ -28,9 +28,7 @@ class PayrollCalculationService:
     def __init__(self, adapter: PayrollDataGatheringAdapter):
         self.adapter = adapter
 
-    async def calculate_payroll(
-        self, payroll: Payroll, working_days: int = 22
-    ) -> Payroll:
+    async def calculate_payroll(self, payroll: Payroll, working_days: int = 22) -> Payroll:
         """
         Calculate payroll for an employee
         Orchestrates the entire payroll calculation process

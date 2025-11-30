@@ -1,21 +1,9 @@
-from typing import List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.modules.absence.api.schemas import (
-    AbsenceBalanceCreate,
-    AbsenceBalanceDetailResponse,
-    AbsenceBalanceListResponse,
-    AbsenceBalanceResponse,
-    AbsenceBalanceUpdate,
-    AbsenceCreate,
-    AbsenceListResponse,
-    AbsenceResponse,
-)
-from app.shared.infrastructure.pagination import PaginatedResponse, create_paginated_response
 from app.modules.absence.application.commands import (
     ApproveAbsenceCommand,
     CancelAbsenceCommand,
@@ -52,6 +40,17 @@ from app.modules.absence.infrastructure.repository import (
     SQLAlchemyAbsenceBalanceRepository,
     SQLAlchemyAbsenceRepository,
 )
+from app.modules.absence.presentation.schemas import (
+    AbsenceBalanceCreate,
+    AbsenceBalanceDetailResponse,
+    AbsenceBalanceListResponse,
+    AbsenceBalanceResponse,
+    AbsenceBalanceUpdate,
+    AbsenceCreate,
+    AbsenceListResponse,
+    AbsenceResponse,
+)
+from app.shared.infrastructure.pagination import PaginatedResponse, create_paginated_response
 
 router = APIRouter(tags=["absence"])
 

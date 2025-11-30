@@ -1,6 +1,5 @@
-from typing import List, Optional
+from typing import Optional
 
-from app.modules.payroll.api.views import PayrollDetailView, PayrollListView
 from app.modules.payroll.application.commands import (
     ApprovePayrollCommand,
     CalculatePayrollCommand,
@@ -20,6 +19,7 @@ from app.modules.payroll.domain.services import PayrollCalculationService
 from app.modules.payroll.domain.value_objects import PayrollPeriod
 from app.modules.payroll.infrastructure.adapters import PayrollValidationAdapter
 from app.modules.payroll.infrastructure.read_model import PayrollReadModel
+from app.modules.payroll.presentation.views import PayrollDetailView
 
 
 class CreatePayrollHandler:
@@ -57,7 +57,9 @@ class CreatePayrollHandler:
 
 
 class CalculatePayrollHandler:
-    def __init__(self, repository: PayrollRepository, calculation_service: PayrollCalculationService):
+    def __init__(
+        self, repository: PayrollRepository, calculation_service: PayrollCalculationService
+    ):
         self.repository = repository
         self.calculation_service = calculation_service
 
