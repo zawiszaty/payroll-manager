@@ -55,6 +55,10 @@ def build_pagination_links(
     Returns:
         PaginationLinks object with navigation URLs
     """
+    # Validate and clamp inputs to safe values
+    current_page = max(1, current_page)
+    total_pages = max(1, total_pages)
+
     # Remove any existing query parameters from base_url
     if "?" in base_url:
         base_url = base_url.split("?")[0]
@@ -62,7 +66,7 @@ def build_pagination_links(
     # Build links
     self_link = f"{base_url}?page={current_page}&limit={page_size}"
     first_link = f"{base_url}?page=1&limit={page_size}"
-    last_link = f"{base_url}?page={total_pages}&limit={page_size}" if total_pages > 0 else first_link
+    last_link = f"{base_url}?page={total_pages}&limit={page_size}"
 
     next_link = None
     if current_page < total_pages:
@@ -97,7 +101,12 @@ def build_pagination_metadata(
     Returns:
         PaginationMetadata object
     """
-    total_pages = ceil(total_items / page_size) if page_size > 0 else 0
+    # Validate and clamp inputs to safe values
+    current_page = max(1, current_page)
+    total_items = max(0, total_items)
+    page_size = max(1, page_size)
+
+    total_pages = max(1, ceil(total_items / page_size))
 
     return PaginationMetadata(
         total_items=total_items,
