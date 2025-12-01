@@ -27,6 +27,7 @@ from app.modules.payroll.infrastructure.models import (
     PayrollLineORM,
 )
 from app.modules.reporting.infrastructure.models import ReportORM
+from app.modules.timesheet.infrastructure.models import TimesheetORM
 
 config = context.config
 settings = get_settings()
