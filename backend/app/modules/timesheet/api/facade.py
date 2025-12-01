@@ -35,9 +35,7 @@ class ITimesheetFacade(ABC):
         pass
 
     @abstractmethod
-    async def get_timesheets_by_employee(
-        self, employee_id: UUID
-    ) -> list[TimesheetDTO]:
+    async def get_timesheets_by_employee(self, employee_id: UUID) -> list[TimesheetDTO]:
         pass
 
     @abstractmethod
@@ -83,9 +81,7 @@ class TimesheetFacade(ITimesheetFacade):
             total_hours=timesheet.total_hours,
         )
 
-    async def get_timesheets_by_employee(
-        self, employee_id: UUID
-    ) -> list[TimesheetDTO]:
+    async def get_timesheets_by_employee(self, employee_id: UUID) -> list[TimesheetDTO]:
         timesheets = await self.repository.get_by_employee(employee_id)
         return [
             TimesheetDTO(
@@ -134,16 +130,12 @@ class TimesheetFacade(ITimesheetFacade):
     async def sum_hours_in_interval(
         self, employee_id: UUID, start_date: date, end_date: date
     ) -> float:
-        return await self.repository.sum_hours_in_interval(
-            employee_id, start_date, end_date
-        )
+        return await self.repository.sum_hours_in_interval(employee_id, start_date, end_date)
 
     async def get_timesheet_summary(
         self, employee_id: UUID, start_date: date, end_date: date
     ) -> TimesheetSummaryDTO:
-        total_hours = await self.sum_hours_in_interval(
-            employee_id, start_date, end_date
-        )
+        total_hours = await self.sum_hours_in_interval(employee_id, start_date, end_date)
         timesheets = await self.repository.get_by_employee_and_date_range(
             employee_id, start_date, end_date
         )

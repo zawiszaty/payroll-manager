@@ -1,6 +1,6 @@
-import pytest
 from datetime import date
-from uuid import uuid4
+
+import pytest
 
 from app.modules.timesheet.domain.models import Timesheet
 from app.modules.timesheet.domain.value_objects import (
@@ -19,9 +19,7 @@ def test_create_time_entry_without_overtime():
 
 
 def test_create_time_entry_with_overtime():
-    time_entry = TimeEntry(
-        hours=8.0, overtime_hours=2.0, overtime_type=OvertimeType.REGULAR
-    )
+    time_entry = TimeEntry(hours=8.0, overtime_hours=2.0, overtime_type=OvertimeType.REGULAR)
     assert time_entry.hours == 8.0
     assert time_entry.overtime_hours == 2.0
     assert time_entry.overtime_type == OvertimeType.REGULAR

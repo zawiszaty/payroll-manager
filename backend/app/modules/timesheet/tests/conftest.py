@@ -1,7 +1,8 @@
-import pytest
-import pytest_asyncio
 from datetime import date
 from uuid import uuid4
+
+import pytest
+import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
@@ -35,9 +36,7 @@ async def test_engine():
 
 @pytest_asyncio.fixture
 async def db_session(test_engine):
-    async_session = async_sessionmaker(
-        test_engine, class_=AsyncSession, expire_on_commit=False
-    )
+    async_session = async_sessionmaker(test_engine, class_=AsyncSession, expire_on_commit=False)
     async with async_session() as session:
         yield session
 
@@ -49,9 +48,7 @@ async def async_client(db_session):
 
     app.dependency_overrides[get_db] = override_get_db
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
 
     app.dependency_overrides.clear()
@@ -79,9 +76,7 @@ def sample_time_entry():
 
 @pytest.fixture
 def sample_time_entry_with_overtime():
-    return TimeEntry(
-        hours=8.0, overtime_hours=2.0, overtime_type=OvertimeType.REGULAR
-    )
+    return TimeEntry(hours=8.0, overtime_hours=2.0, overtime_type=OvertimeType.REGULAR)
 
 
 @pytest.fixture

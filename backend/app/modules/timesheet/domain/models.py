@@ -3,7 +3,6 @@ from datetime import date
 from uuid import UUID, uuid4
 
 from app.modules.timesheet.domain.value_objects import (
-    OvertimeType,
     TimeEntry,
     TimesheetStatus,
 )

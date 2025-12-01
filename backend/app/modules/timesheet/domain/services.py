@@ -86,6 +86,4 @@ class SumHoursService:
     async def sum_hours_in_interval(
         self, employee_id: UUID, start_date: date, end_date: date
     ) -> float:
-        return await self.repository.sum_hours_in_interval(
-            employee_id, start_date, end_date
-        )
+        return await self.repository.sum_hours_in_interval(employee_id, start_date, end_date)

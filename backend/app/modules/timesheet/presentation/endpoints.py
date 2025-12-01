@@ -89,9 +89,7 @@ async def get_timesheet(
     timesheet = await handler.handle(query)
 
     if not timesheet:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Timesheet not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Timesheet not found")
 
     return TimesheetResponse.from_entity(timesheet)
 
@@ -120,9 +118,7 @@ async def get_timesheets_by_employee(
     return [TimesheetResponse.from_entity(ts) for ts in timesheets]
 
 
-@router.get(
-    "/employee/{employee_id}/period", response_model=list[TimesheetResponse]
-)
+@router.get("/employee/{employee_id}/period", response_model=list[TimesheetResponse])
 async def get_timesheets_by_employee_and_date_range(
     employee_id: UUID,
     start_date: date,
@@ -154,9 +150,7 @@ async def get_timesheets_by_status(
 
 
 @router.get("/pending-approval/list", response_model=list[TimesheetResponse])
-async def get_pending_approval(
-    db: AsyncSession = Depends(get_db)
-) -> list[TimesheetResponse]:
+async def get_pending_approval(db: AsyncSession = Depends(get_db)) -> list[TimesheetResponse]:
     repository = SQLAlchemyTimesheetRepository(db)
     handler = GetPendingApprovalHandler(repository)
 
@@ -243,9 +237,7 @@ async def approve_timesheet(
     repository = SQLAlchemyTimesheetRepository(db)
     handler = ApproveTimesheetHandler(repository)
 
-    command = ApproveTimesheetCommand(
-        timesheet_id=timesheet_id, approved_by=request.approved_by
-    )
+    command = ApproveTimesheetCommand(timesheet_id=timesheet_id, approved_by=request.approved_by)
 
     try:
         timesheet = await handler.handle(command)
@@ -277,9 +269,7 @@ async def reject_timesheet(
 
 
 @router.delete("/{timesheet_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_timesheet(
-    timesheet_id: UUID, db: AsyncSession = Depends(get_db)
-) -> None:
+async def delete_timesheet(timesheet_id: UUID, db: AsyncSession = Depends(get_db)) -> None:
     repository = SQLAlchemyTimesheetRepository(db)
     handler = DeleteTimesheetHandler(repository)
 

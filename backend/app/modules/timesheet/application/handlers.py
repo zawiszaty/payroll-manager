@@ -151,9 +151,7 @@ class GetTimesheetsByEmployeeAndDateRangeHandler:
     def __init__(self, repository: TimesheetRepository):
         self.repository = repository
 
-    async def handle(
-        self, query: GetTimesheetsByEmployeeAndDateRangeQuery
-    ) -> list[Timesheet]:
+    async def handle(self, query: GetTimesheetsByEmployeeAndDateRangeQuery) -> list[Timesheet]:
         return await self.repository.get_by_employee_and_date_range(
             query.employee_id, query.start_date, query.end_date
         )

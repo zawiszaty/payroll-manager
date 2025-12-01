@@ -1,7 +1,7 @@
 from datetime import date
 from uuid import UUID
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.timesheet.domain.models import Timesheet
@@ -22,9 +22,7 @@ class SQLAlchemyTimesheetRepository(TimesheetRepository):
         time_entry = TimeEntry(
             hours=orm.hours,
             overtime_hours=orm.overtime_hours,
-            overtime_type=OvertimeType(orm.overtime_type)
-            if orm.overtime_type
-            else None,
+            overtime_type=OvertimeType(orm.overtime_type) if orm.overtime_type else None,
         )
 
         return Timesheet(
@@ -153,9 +151,7 @@ class SQLAlchemyTimesheetRepository(TimesheetRepository):
     ) -> float:
         result = await self.session.execute(
             select(
-                func.sum(TimesheetORM.hours + TimesheetORM.overtime_hours).label(
-                    "total_hours"
-                )
+                func.sum(TimesheetORM.hours + TimesheetORM.overtime_hours).label("total_hours")
             ).where(
                 TimesheetORM.employee_id == employee_id,
                 TimesheetORM.work_date >= start_date,

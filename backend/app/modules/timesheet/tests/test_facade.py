@@ -1,18 +1,18 @@
-import pytest
 from datetime import date
 from uuid import uuid4
 
+import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.timesheet.api.facade import TimesheetFacade
-from app.modules.timesheet.infrastructure.repository import (
-    SQLAlchemyTimesheetRepository,
-)
 from app.modules.timesheet.domain.models import Timesheet
 from app.modules.timesheet.domain.value_objects import (
     OvertimeType,
     TimeEntry,
     TimesheetStatus,
+)
+from app.modules.timesheet.infrastructure.repository import (
+    SQLAlchemyTimesheetRepository,
 )
 
 
@@ -138,9 +138,7 @@ async def test_sum_hours_in_interval(db_session: AsyncSession):
     timesheet1.approve(approver_id)
     await repository.save(timesheet1)
 
-    time_entry2 = TimeEntry(
-        hours=7.5, overtime_hours=1.5, overtime_type=OvertimeType.REGULAR
-    )
+    time_entry2 = TimeEntry(hours=7.5, overtime_hours=1.5, overtime_type=OvertimeType.REGULAR)
     timesheet2 = Timesheet(
         employee_id=employee_id,
         work_date=date(2024, 1, 16),
@@ -152,9 +150,7 @@ async def test_sum_hours_in_interval(db_session: AsyncSession):
     await repository.save(timesheet2)
     await db_session.commit()
 
-    total = await facade.sum_hours_in_interval(
-        employee_id, date(2024, 1, 15), date(2024, 1, 16)
-    )
+    total = await facade.sum_hours_in_interval(employee_id, date(2024, 1, 15), date(2024, 1, 16))
 
     assert total == 17.0
 
@@ -190,9 +186,7 @@ async def test_get_timesheet_summary(db_session: AsyncSession):
     await repository.save(timesheet2)
     await db_session.commit()
 
-    summary = await facade.get_timesheet_summary(
-        employee_id, date(2024, 1, 15), date(2024, 1, 16)
-    )
+    summary = await facade.get_timesheet_summary(employee_id, date(2024, 1, 15), date(2024, 1, 16))
 
     assert summary.employee_id == employee_id
     assert summary.total_hours == 15.5

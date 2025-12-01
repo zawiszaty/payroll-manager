@@ -1,9 +1,7 @@
-import pytest
-from datetime import date
 from uuid import uuid4
-from httpx import AsyncClient
 
-from app.main import app
+import pytest
+from httpx import AsyncClient
 
 
 @pytest.mark.asyncio
