@@ -745,7 +745,88 @@ SECRET_KEY=your-secret-key-change-in-production
 task test-payroll           # Run payroll module tests
 ```
 
-### ✅ M8: Reporting Module (Completed)
+### ✅ M8: Audit Module (Completed)
+
+#### Domain Layer
+- **AuditLog** aggregate root with:
+  - Comprehensive tracking of all system changes
+  - Entity type classification (EMPLOYEE, CONTRACT, PAYROLL, etc.)
+  - Action classification (CREATED, UPDATED, STATUS_CHANGED, etc.)
+  - Old/new value tracking for changes
+  - Employee association for timeline queries
+  - Event metadata for debugging
+
+- **Value Objects**:
+  - `EntityType`: Enum (EMPLOYEE, CONTRACT, PAYROLL, ABSENCE, RATE, BONUS, etc.)
+  - `AuditAction`: Enum (CREATED, UPDATED, DELETED, STATUS_CHANGED, APPROVED, etc.)
+  - `AuditMetadata`: Event-specific data storage
+
+#### Infrastructure Layer
+- **ORM Model**: AuditLogORM with indexed fields for fast queries
+- **Repository**: SQLAlchemyAuditLogRepository with async operations
+- **Event Handlers**: Async event handlers for all domain events
+  - Background processing using asyncio.create_task
+  - Non-blocking audit log creation
+  - Separate database sessions to avoid transaction coupling
+- **Event Dispatcher**: Singleton pattern for global event management
+- **Indexes**: Composite indexes on (entity_type, entity_id), (employee_id, occurred_at)
+
+#### Application Layer (CQRS)
+- **Queries**: GetAuditLog, ListAuditLogs, GetAuditLogsByEntity, GetAuditLogsByEmployee, GetAuditTimeline
+- **Handlers**: Read-only query handlers with filtering and pagination
+
+#### Presentation Layer (HTTP API)
+- GET `/api/v1/audit/{id}` - Get single audit log
+- GET `/api/v1/audit/` - List all audit logs (paginated, filterable by entity_type, action)
+- GET `/api/v1/audit/entity/{entity_type}/{entity_id}` - Timeline for specific entity
+- GET `/api/v1/audit/employee/{employee_id}` - Timeline for employee
+- GET `/api/v1/audit/timeline` - Global timeline with filters (entity_type, employee_id, date range)
+
+**Query Parameters**:
+- `skip`, `limit` - Pagination
+- `entity_type` - Filter by entity type (employee, contract, payroll, etc.)
+- `action` - Filter by action (created, updated, etc.)
+- `employee_id` - Filter by employee
+- `date_from`, `date_to` - Date range filters
+
+#### Async Architecture
+- **Event Dispatching**: Events dispatched asynchronously using `asyncio.create_task`
+- **Non-Blocking**: Audit logging runs in background tasks, doesn't block core operations
+- **Separate Sessions**: Each audit event handler uses its own database session
+- **Error Isolation**: Audit failures logged but don't affect main transactions
+
+#### Integration
+- **Employee Module**: Tracks CREATED, UPDATED, STATUS_CHANGED events
+- **Contract Module**: Tracks CREATED, ACTIVATED, CANCELED, EXPIRED events
+- **Extensible**: Easy to add handlers for other modules (Payroll, Absence, etc.)
+
+#### Database Schema
+```sql
+audit_logs:
+- id (UUID, PK)
+- entity_type (ENUM, INDEXED)
+- entity_id (UUID, INDEXED)
+- employee_id (UUID, INDEXED, nullable)
+- action (ENUM, INDEXED)
+- old_values (JSONB, nullable)
+- new_values (JSONB, nullable)
+- changed_by (UUID, nullable)
+- metadata (JSONB)
+- occurred_at (TIMESTAMP, INDEXED)
+- created_at (TIMESTAMP)
+
+Composite Indexes:
+- (entity_type, entity_id)
+- (employee_id, occurred_at)
+- (occurred_at)
+```
+
+#### Task Commands
+```bash
+# No specific test command yet - integrated with module tests
+```
+
+### ✅ M9: Reporting Module (Completed)
 
 #### Domain Layer
 - **Report** aggregate root with:

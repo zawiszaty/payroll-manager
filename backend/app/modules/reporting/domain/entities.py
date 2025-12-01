@@ -22,6 +22,7 @@ class Report:
     error_message: str | None = None
     created_at: datetime = field(default_factory=datetime.now)
     completed_at: datetime | None = None
+    _domain_events: list = field(default_factory=list, init=False, repr=False)
 
     def start_processing(self) -> None:
         if self.status != ReportStatus.PENDING:
@@ -53,3 +54,15 @@ class Report:
 
     def is_pending(self) -> bool:
         return self.status == ReportStatus.PENDING
+
+    def _add_domain_event(self, event) -> None:
+        """Add a domain event to the entity"""
+        self._domain_events.append(event)
+
+    def get_domain_events(self) -> list:
+        """Get all domain events"""
+        return self._domain_events.copy()
+
+    def clear_domain_events(self) -> None:
+        """Clear all domain events"""
+        self._domain_events.clear()

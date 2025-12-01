@@ -17,6 +17,9 @@ from app.modules.reporting.infrastructure.models import ReportORM
 class SQLAlchemyReportRepository(ReportRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
+        from app.shared.domain.events import get_event_dispatcher
+
+        self.event_dispatcher = get_event_dispatcher()
 
     def _to_domain(self, orm: ReportORM) -> Report:
         params_dict = orm.parameters or {}
@@ -77,12 +80,22 @@ class SQLAlchemyReportRepository(ReportRepository):
             completed_at=report.completed_at,
         )
 
+    async def _dispatch_events(self, report: Report) -> None:
+        import asyncio
+
+        events = report.get_domain_events()
+        for event in events:
+            asyncio.create_task(self.event_dispatcher.dispatch(event))
+        report.clear_domain_events()
+
     async def save(self, report: Report) -> Report:
         orm = self._to_orm(report)
         self.session.add(orm)
         await self.session.flush()
         await self.session.refresh(orm)
-        return self._to_domain(orm)
+        result = self._to_domain(orm)
+        await self._dispatch_events(report)
+        return result
 
     async def get_by_id(self, report_id: UUID) -> Report | None:
         result = await self.session.execute(select(ReportORM).where(ReportORM.id == report_id))

@@ -1,3 +1,4 @@
+import asyncio
 from typing import List, Optional
 from uuid import UUID
 
@@ -9,12 +10,20 @@ from app.modules.employee.domain.models import Employee
 from app.modules.employee.domain.repository import EmployeeRepository
 from app.modules.employee.domain.value_objects import EmploymentStatus
 from app.modules.employee.infrastructure.models import EmployeeORM, EmploymentStatusORM
+from app.shared.domain.events import get_event_dispatcher
 from app.shared.domain.value_objects import DateRange
 
 
 class SQLAlchemyEmployeeRepository(EmployeeRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
+        self.event_dispatcher = get_event_dispatcher()
+
+    async def _dispatch_events(self, employee: Employee) -> None:
+        events = employee.get_domain_events()
+        for event in events:
+            asyncio.create_task(self.event_dispatcher.dispatch(event))
+        employee.clear_domain_events()
 
     def _to_domain(self, orm: EmployeeORM) -> Employee:
         statuses = [
@@ -67,7 +76,9 @@ class SQLAlchemyEmployeeRepository(EmployeeRepository):
         self.session.add(orm)
         await self.session.flush()
         await self.session.refresh(orm, ["statuses"])
-        return self._to_domain(orm)
+        result = self._to_domain(orm)
+        await self._dispatch_events(employee)
+        return result
 
     async def get_by_id(self, employee_id: UUID) -> Optional[Employee]:
         stmt = (
@@ -144,7 +155,9 @@ class SQLAlchemyEmployeeRepository(EmployeeRepository):
         result = await self.session.execute(stmt)
         orm = result.scalar_one_or_none()
 
-        return self._to_domain(orm)
+        domain_result = self._to_domain(orm)
+        await self._dispatch_events(employee)
+        return domain_result
 
     async def delete(self, employee_id: UUID) -> bool:
         stmt = select(EmployeeORM).where(EmployeeORM.id == employee_id)

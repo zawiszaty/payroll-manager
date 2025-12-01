@@ -48,6 +48,7 @@ services:
     container_name: payroll_backend
     volumes:
       - ./backend:/app
+      - ./reports:/app/reports
     ports:
       - "8000:8000"
     depends_on:
@@ -69,6 +70,28 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+
+  event_consumer:
+    build: ./backend
+    container_name: payroll_event_consumer
+    command: python -u -m app.shared.infrastructure.event_consumer
+    volumes:
+      - ./backend:/app
+      - ./reports:/app/reports
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://payroll_user:payroll_pass@postgres:5432/payroll_db
+      RABBITMQ_URL: amqp://payroll:payroll@rabbitmq:5672/
+      REDIS_URL: redis://redis:6379/0
+    restart: unless-stopped
 
 volumes:
   postgres_data:

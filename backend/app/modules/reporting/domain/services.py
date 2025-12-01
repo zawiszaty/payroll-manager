@@ -18,12 +18,25 @@ class CreateReportService:
         format: ReportFormat,
         parameters: ReportParameters,
     ) -> Report:
+        from app.modules.reporting.domain.events import ReportGenerationRequestedEvent
+
         report = Report(
             name=name,
             report_type=report_type,
             format=format,
             parameters=parameters,
         )
+
+        # Add event for async processing
+        report._add_domain_event(
+            ReportGenerationRequestedEvent(
+                report_id=report.id,
+                report_type=report_type.value,
+                report_format=format.value,
+                parameters=parameters.to_dict(),
+            )
+        )
+
         return await self.repository.save(report)
 
 
