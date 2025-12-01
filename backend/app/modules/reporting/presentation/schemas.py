@@ -41,8 +41,12 @@ class ReportResponse(BaseModel):
             parameters={
                 "employee_id": report.parameters.employee_id,
                 "department": report.parameters.department,
-                "start_date": report.parameters.start_date,
-                "end_date": report.parameters.end_date,
+                "start_date": report.parameters.start_date.isoformat()
+                if report.parameters.start_date
+                else None,
+                "end_date": report.parameters.end_date.isoformat()
+                if report.parameters.end_date
+                else None,
                 "additional_filters": report.parameters.additional_filters,
             },
             file_path=report.file_path,

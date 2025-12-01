@@ -54,10 +54,13 @@ class PDFReportGenerator(IReportGenerator):
         story.append(Spacer(1, 20))
 
         if "rows" in data and data["rows"]:
-            table_data = [data.get("headers", [])] + data["rows"]
-            table = Table(table_data)
-            table.setStyle(
-                TableStyle(
+            headers = data.get("headers", [])
+
+            # Only prepend headers if they are non-empty
+            if headers:
+                table_data = [headers] + data["rows"]
+                # Apply header-specific styling
+                table_style = TableStyle(
                     [
                         ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
                         ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
@@ -69,7 +72,20 @@ class PDFReportGenerator(IReportGenerator):
                         ("GRID", (0, 0), (-1, -1), 1, colors.black),
                     ]
                 )
-            )
+            else:
+                # No headers, just use rows
+                table_data = data["rows"]
+                # Apply only body styling (no row 0 header styling)
+                table_style = TableStyle(
+                    [
+                        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                        ("BACKGROUND", (0, 0), (-1, -1), colors.beige),
+                        ("GRID", (0, 0), (-1, -1), 1, colors.black),
+                    ]
+                )
+
+            table = Table(table_data)
+            table.setStyle(table_style)
             story.append(table)
 
         doc.build(story)

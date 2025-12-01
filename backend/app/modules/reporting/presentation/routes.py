@@ -67,6 +67,17 @@ async def create_report(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
+@router.get("/", response_model=ReportListResponse)
+async def list_reports(db: AsyncSession = Depends(get_db)) -> ReportListResponse:
+    repository = SQLAlchemyReportRepository(db)
+    handler = ListReportsHandler(repository)
+
+    query = ListReportsQuery()
+    reports = await handler.handle(query)
+
+    return ReportListResponse(reports=[ReportResponse.from_entity(report) for report in reports])
+
+
 @router.get("/{report_id}", response_model=ReportResponse)
 async def get_report(report_id: UUID, db: AsyncSession = Depends(get_db)) -> ReportResponse:
     repository = SQLAlchemyReportRepository(db)
@@ -79,17 +90,6 @@ async def get_report(report_id: UUID, db: AsyncSession = Depends(get_db)) -> Rep
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
 
     return ReportResponse.from_entity(report)
-
-
-@router.get("/", response_model=ReportListResponse)
-async def list_reports(db: AsyncSession = Depends(get_db)) -> ReportListResponse:
-    repository = SQLAlchemyReportRepository(db)
-    handler = ListReportsHandler(repository)
-
-    query = ListReportsQuery()
-    reports = await handler.handle(query)
-
-    return ReportListResponse(reports=[ReportResponse.from_entity(report) for report in reports])
 
 
 @router.get("/type/{report_type}", response_model=ReportListResponse)
@@ -109,15 +109,15 @@ async def list_reports_by_type(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.get("/status/{status}", response_model=ReportListResponse)
+@router.get("/status/{report_status}", response_model=ReportListResponse)
 async def list_reports_by_status(
-    status: str, db: AsyncSession = Depends(get_db)
+    report_status: str, db: AsyncSession = Depends(get_db)
 ) -> ReportListResponse:
     repository = SQLAlchemyReportRepository(db)
     handler = ListReportsByStatusHandler(repository)
 
     try:
-        query = ListReportsByStatusQuery(status=status)
+        query = ListReportsByStatusQuery(status=report_status)
         reports = await handler.handle(query)
         return ReportListResponse(
             reports=[ReportResponse.from_entity(report) for report in reports]

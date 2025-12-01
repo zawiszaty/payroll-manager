@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import date
 from enum import Enum
 
 
@@ -29,8 +30,8 @@ class ReportStatus(Enum):
 class ReportParameters:
     employee_id: str | None = None
     department: str | None = None
-    start_date: str | None = None
-    end_date: str | None = None
+    start_date: date | None = None
+    end_date: date | None = None
     additional_filters: dict[str, str] | None = None
 
     def __post_init__(self) -> None:

@@ -37,12 +37,6 @@ class ReportingDataAdapter:
         Fetch payroll summary data from Payroll module
         Returns data in format ready for report generation
         """
-        # Build query parameters
-        filters = {}
-
-        if parameters.employee_id:
-            filters["employee_id"] = UUID(parameters.employee_id)
-
         # Fetch payrolls from read model
         from sqlalchemy import select
 
@@ -54,20 +48,23 @@ class ReportingDataAdapter:
             query = query.where(PayrollORM.employee_id == UUID(parameters.employee_id))
 
         if parameters.start_date and parameters.end_date:
-            start = date.fromisoformat(parameters.start_date)
-            end = date.fromisoformat(parameters.end_date)
             query = query.where(
-                PayrollORM.period_start_date >= start, PayrollORM.period_end_date <= end
+                PayrollORM.period_start_date >= parameters.start_date,
+                PayrollORM.period_end_date <= parameters.end_date,
             )
 
         result = await self.session.execute(query)
         payrolls = result.scalars().all()
 
+        # Bulk fetch all employees to avoid N+1 query
+        employee_ids = list(set(payroll.employee_id for payroll in payrolls))
+        employees_map = await self.employee_facade.get_employees_by_ids(employee_ids)
+
         # Format data for report
         rows = []
         for payroll in payrolls:
-            # Get employee name
-            employee = await self.employee_facade.get_employee_by_id(payroll.employee_id)
+            # Get employee name from map
+            employee = employees_map.get(payroll.employee_id)
             employee_name = f"{employee.first_name} {employee.last_name}" if employee else "Unknown"
 
             # Extract payroll summary data
@@ -115,9 +112,7 @@ class ReportingDataAdapter:
             employee_name = f"{employee.first_name} {employee.last_name}"
 
             # Get current contract for base salary
-            check_date = date.today()
-            if parameters.start_date:
-                check_date = date.fromisoformat(parameters.start_date)
+            check_date = parameters.start_date if parameters.start_date else date.today()
 
             contract = await self.contract_facade.get_active_contract_for_employee(
                 employee.id, check_date
@@ -128,16 +123,8 @@ class ReportingDataAdapter:
                 base_salary = contract.terms.rate_amount
 
             # Get bonuses for the period (or year)
-            start = (
-                date.fromisoformat(parameters.start_date)
-                if parameters.start_date
-                else date(check_date.year, 1, 1)
-            )
-            end = (
-                date.fromisoformat(parameters.end_date)
-                if parameters.end_date
-                else date(check_date.year, 12, 31)
-            )
+            start = parameters.start_date if parameters.start_date else date(check_date.year, 1, 1)
+            end = parameters.end_date if parameters.end_date else date(check_date.year, 12, 31)
 
             bonuses = await self.compensation_facade.get_bonuses_for_period(employee.id, start, end)
 
@@ -162,9 +149,9 @@ class ReportingDataAdapter:
         """
         Fetch absence summary data from Absence module
         """
-        # Get absences
-        start = date.fromisoformat(parameters.start_date) if parameters.start_date else None
-        end = date.fromisoformat(parameters.end_date) if parameters.end_date else None
+        # Get absences - parameters already have date objects
+        start = parameters.start_date
+        end = parameters.end_date
 
         # Get absences from facade
         if parameters.employee_id and start and end:
@@ -207,11 +194,15 @@ class ReportingDataAdapter:
                 for a in absence_orms
             ]
 
+        # Bulk fetch all employees to avoid N+1 query
+        employee_ids = list(set(absence.employee_id for absence in absences))
+        employees_map = await self.employee_facade.get_employees_by_ids(employee_ids)
+
         # Build rows
         rows = []
         for absence in absences:
-            # Get employee name
-            employee = await self.employee_facade.get_employee_by_id(absence.employee_id)
+            # Get employee name from map
+            employee = employees_map.get(absence.employee_id)
             employee_name = f"{employee.first_name} {employee.last_name}" if employee else "Unknown"
 
             # Calculate days
@@ -255,22 +246,24 @@ class ReportingDataAdapter:
     async def fetch_tax_report_data(self, parameters: ReportParameters) -> dict[str, Any]:
         """
         Fetch tax report data from payroll records
+        Attempts to extract federal/state tax breakdown from payroll lines
         """
-        # Build query for payrolls
+        # Build query for payrolls with lines eager-loaded
         from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
 
+        from app.modules.payroll.domain.value_objects import PayrollLineType
         from app.modules.payroll.infrastructure.models import PayrollORM
 
-        query = select(PayrollORM)
+        query = select(PayrollORM).options(selectinload(PayrollORM.lines))
 
         if parameters.employee_id:
             query = query.where(PayrollORM.employee_id == UUID(parameters.employee_id))
 
         if parameters.start_date and parameters.end_date:
-            start = date.fromisoformat(parameters.start_date)
-            end = date.fromisoformat(parameters.end_date)
             query = query.where(
-                PayrollORM.period_start_date >= start, PayrollORM.period_end_date <= end
+                PayrollORM.period_start_date >= parameters.start_date,
+                PayrollORM.period_end_date <= parameters.end_date,
             )
 
         result = await self.session.execute(query)
@@ -278,47 +271,90 @@ class ReportingDataAdapter:
 
         # Aggregate tax data by employee
         employee_taxes: dict[UUID, dict[str, Decimal]] = {}
+        has_explicit_breakdown = False
 
         for payroll in payrolls:
             if payroll.employee_id not in employee_taxes:
-                employee_taxes[payroll.employee_id] = {"gross": Decimal("0"), "taxes": Decimal("0")}
+                employee_taxes[payroll.employee_id] = {
+                    "gross": Decimal("0"),
+                    "federal_tax": Decimal("0"),
+                    "state_tax": Decimal("0"),
+                    "total_tax": Decimal("0"),
+                }
 
             employee_taxes[payroll.employee_id]["gross"] += payroll.gross_pay_amount or Decimal("0")
-            employee_taxes[payroll.employee_id]["taxes"] += payroll.total_taxes_amount or Decimal(
-                "0"
+            employee_taxes[payroll.employee_id]["total_tax"] += (
+                payroll.total_taxes_amount or Decimal("0")
             )
 
-        # Build rows
-        rows = []
-        for employee_id, tax_data in employee_taxes.items():
-            employee = await self.employee_facade.get_employee_by_id(employee_id)
-            employee_name = f"{employee.first_name} {employee.last_name}" if employee else "Unknown"
+            # Try to extract federal/state tax breakdown from payroll lines
+            for line in payroll.lines:
+                if line.line_type == PayrollLineType.TAX:
+                    description_lower = line.description.lower()
+                    amount = abs(line.amount) if line.amount else Decimal("0")
 
-            gross = tax_data["gross"]
-            total_tax = tax_data["taxes"]
+                    if "federal" in description_lower:
+                        employee_taxes[payroll.employee_id]["federal_tax"] += amount
+                        has_explicit_breakdown = True
+                    elif "state" in description_lower:
+                        employee_taxes[payroll.employee_id]["state_tax"] += amount
+                        has_explicit_breakdown = True
 
-            # Split tax into federal (70%) and state (30%) as example
-            federal_tax = total_tax * Decimal("0.7")
-            state_tax = total_tax * Decimal("0.3")
+        # Bulk fetch all employees to avoid N+1 query
+        employee_ids = list(employee_taxes.keys())
+        employees_map = await self.employee_facade.get_employees_by_ids(employee_ids)
 
-            rows.append(
-                [
-                    employee_name,
-                    f"${gross:,.2f}",
-                    f"${federal_tax:,.2f}",
-                    f"${state_tax:,.2f}",
-                    f"${total_tax:,.2f}",
-                ]
-            )
-
-        return {
-            "headers": [
+        # Determine headers based on whether we have explicit breakdown
+        if has_explicit_breakdown:
+            headers = [
                 "Employee",
                 "Gross Income",
                 "Federal Tax",
                 "State Tax",
                 "Total Tax",
-            ],
+            ]
+        else:
+            # No explicit breakdown available, show only total
+            headers = [
+                "Employee",
+                "Gross Income",
+                "Total Tax",
+            ]
+
+        # Build rows
+        rows = []
+        for employee_id, tax_data in employee_taxes.items():
+            employee = employees_map.get(employee_id)
+            employee_name = f"{employee.first_name} {employee.last_name}" if employee else "Unknown"
+
+            gross = tax_data["gross"]
+            total_tax = tax_data["total_tax"]
+
+            if has_explicit_breakdown:
+                federal_tax = tax_data["federal_tax"]
+                state_tax = tax_data["state_tax"]
+
+                rows.append(
+                    [
+                        employee_name,
+                        f"${gross:,.2f}",
+                        f"${federal_tax:,.2f}",
+                        f"${state_tax:,.2f}",
+                        f"${total_tax:,.2f}",
+                    ]
+                )
+            else:
+                # Only show gross and total tax when no breakdown available
+                rows.append(
+                    [
+                        employee_name,
+                        f"${gross:,.2f}",
+                        f"${total_tax:,.2f}",
+                    ]
+                )
+
+        return {
+            "headers": headers,
             "rows": rows,
         }
 

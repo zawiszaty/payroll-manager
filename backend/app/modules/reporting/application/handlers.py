@@ -1,3 +1,4 @@
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -36,11 +37,27 @@ class CreateReportHandler:
         report_type = ReportType(command.report_type)
         report_format = ReportFormat(command.format)
 
+        # Convert string dates to date objects
+        start_date = None
+        end_date = None
+
+        if command.start_date:
+            try:
+                start_date = date.fromisoformat(command.start_date)
+            except ValueError as e:
+                raise ValueError(f"Invalid start_date format: {e}")
+
+        if command.end_date:
+            try:
+                end_date = date.fromisoformat(command.end_date)
+            except ValueError as e:
+                raise ValueError(f"Invalid end_date format: {e}")
+
         parameters = ReportParameters(
             employee_id=command.employee_id,
             department=command.department,
-            start_date=command.start_date,
-            end_date=command.end_date,
+            start_date=start_date,
+            end_date=end_date,
             additional_filters=command.additional_filters,
         )
 

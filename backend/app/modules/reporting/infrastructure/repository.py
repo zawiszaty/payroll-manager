@@ -1,3 +1,4 @@
+from datetime import date
 from uuid import UUID
 
 from sqlalchemy import delete, select
@@ -19,11 +20,20 @@ class SQLAlchemyReportRepository(ReportRepository):
 
     def _to_domain(self, orm: ReportORM) -> Report:
         params_dict = orm.parameters or {}
+
+        # Parse ISO date strings back to date objects
+        start_date = None
+        end_date = None
+        if params_dict.get("start_date"):
+            start_date = date.fromisoformat(params_dict["start_date"])
+        if params_dict.get("end_date"):
+            end_date = date.fromisoformat(params_dict["end_date"])
+
         parameters = ReportParameters(
             employee_id=params_dict.get("employee_id"),
             department=params_dict.get("department"),
-            start_date=params_dict.get("start_date"),
-            end_date=params_dict.get("end_date"),
+            start_date=start_date,
+            end_date=end_date,
             additional_filters=params_dict.get("additional_filters"),
         )
 
@@ -41,11 +51,16 @@ class SQLAlchemyReportRepository(ReportRepository):
         )
 
     def _to_orm(self, report: Report) -> ReportORM:
+        # Serialize date objects to ISO format strings for JSON storage
         params_dict = {
             "employee_id": report.parameters.employee_id,
             "department": report.parameters.department,
-            "start_date": report.parameters.start_date,
-            "end_date": report.parameters.end_date,
+            "start_date": report.parameters.start_date.isoformat()
+            if report.parameters.start_date
+            else None,
+            "end_date": report.parameters.end_date.isoformat()
+            if report.parameters.end_date
+            else None,
             "additional_filters": report.parameters.additional_filters,
         }
 
@@ -107,8 +122,12 @@ class SQLAlchemyReportRepository(ReportRepository):
         orm.parameters = {
             "employee_id": report.parameters.employee_id,
             "department": report.parameters.department,
-            "start_date": report.parameters.start_date,
-            "end_date": report.parameters.end_date,
+            "start_date": report.parameters.start_date.isoformat()
+            if report.parameters.start_date
+            else None,
+            "end_date": report.parameters.end_date.isoformat()
+            if report.parameters.end_date
+            else None,
             "additional_filters": report.parameters.additional_filters,
         }
         orm.file_path = report.file_path
