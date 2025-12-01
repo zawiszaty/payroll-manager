@@ -50,6 +50,46 @@ class EmployeeReadModel:
             updated_at=orm.updated_at.date() if orm.updated_at else None,
         )
 
+    async def get_by_ids(self, employee_ids: list[UUID]) -> dict[UUID, EmployeeDetailView]:
+        """
+        Get multiple employees by their IDs in a single query
+        Returns a dict mapping employee_id -> EmployeeDetailView
+        """
+        if not employee_ids:
+            return {}
+
+        stmt = (
+            select(EmployeeORM)
+            .options(selectinload(EmployeeORM.statuses))
+            .where(EmployeeORM.id.in_(employee_ids))
+        )
+        result = await self.session.execute(stmt)
+        orms = result.scalars().all()
+
+        return {
+            orm.id: EmployeeDetailView(
+                id=orm.id,
+                first_name=orm.first_name,
+                last_name=orm.last_name,
+                email=orm.email,
+                phone=orm.phone,
+                date_of_birth=orm.date_of_birth,
+                hire_date=orm.hire_date,
+                statuses=[
+                    EmploymentStatusView(
+                        status_type=s.status_type,
+                        valid_from=s.valid_from,
+                        valid_to=s.valid_to,
+                        reason=s.reason,
+                    )
+                    for s in sorted(orm.statuses, key=lambda x: x.valid_from, reverse=True)
+                ],
+                created_at=orm.created_at.date() if orm.created_at else None,
+                updated_at=orm.updated_at.date() if orm.updated_at else None,
+            )
+            for orm in orms
+        }
+
     async def list(self, skip: int = 0, limit: int = 100) -> Tuple[List[EmployeeListView], int]:
         # Get total count
         count_stmt = select(func.count()).select_from(EmployeeORM)

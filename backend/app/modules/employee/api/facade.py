@@ -27,6 +27,11 @@ class IEmployeeModuleFacade(ABC):
         pass
 
     @abstractmethod
+    async def get_employees_by_ids(self, employee_ids: list[UUID]) -> dict[UUID, any]:
+        """Get multiple employees by their IDs in a single query"""
+        pass
+
+    @abstractmethod
     async def is_employee_active_on_date(self, employee_id: UUID, check_date: date) -> bool:
         """
         Check if employee is active on a specific date
@@ -58,6 +63,10 @@ class EmployeeModuleFacade(IEmployeeModuleFacade):
     async def get_employee_by_id(self, employee_id: UUID):
         """Get employee details by ID"""
         return await self.read_model.get_by_id(employee_id)
+
+    async def get_employees_by_ids(self, employee_ids: list[UUID]) -> dict[UUID, any]:
+        """Get multiple employees by their IDs in a single query"""
+        return await self.read_model.get_by_ids(employee_ids)
 
     async def is_employee_active_on_date(self, employee_id: UUID, check_date: date) -> bool:
         """

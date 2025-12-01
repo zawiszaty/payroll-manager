@@ -279,10 +279,10 @@ payroll-manager/
 │   │   │   ├── employee/           # ✅ Completed
 │   │   │   ├── contract/           # ✅ Completed
 │   │   │   ├── compensation/       # ✅ Completed
-│   │   │   ├── absence/            # TODO
+│   │   │   ├── absence/            # ✅ Completed
 │   │   │   ├── timesheet/          # TODO
 │   │   │   ├── payroll/            # TODO
-│   │   │   └── reporting/          # TODO
+│   │   │   └── reporting/          # ✅ Completed
 │   │   ├── shared/
 │   │   │   └── domain/
 │   │   │       └── value_objects.py  # DateRange, Money
@@ -569,6 +569,18 @@ task test-absence          # Run absence module tests
 - created_at (TIMESTAMP)
 - updated_at (TIMESTAMP)
 
+#### reports
+- id (UUID, PK)
+- name (VARCHAR 255)
+- report_type (ENUM: payroll_summary, employee_compensation, absence_summary, timesheet_summary, tax_report, custom, INDEXED)
+- format (ENUM: pdf, csv, xlsx, json)
+- status (ENUM: pending, processing, completed, failed, INDEXED)
+- parameters (JSON, nullable)
+- file_path (VARCHAR 500, nullable)
+- error_message (TEXT, nullable)
+- created_at (TIMESTAMP)
+- completed_at (TIMESTAMP, nullable)
+
 ## Configuration
 
 ### Environment Variables (.env)
@@ -625,19 +637,186 @@ SECRET_KEY=your-secret-key-change-in-production
 - Approval workflows
 - Project/task allocation
 
-### M7: Payroll Processing (TODO)
-- Payroll calculation engine
-- Pay slip generation
-- Payment processing
-- Tax calculations
-- Payroll runs history
+### ✅ M7: Payroll Processing (Completed)
 
-### M8: Reporting Module (TODO)
-- Payroll reports
-- Employee reports
-- Tax reports
-- Custom report builder
-- Export functionality
+#### Domain Layer
+- **Payroll** aggregate root with:
+  - Payroll lifecycle management (DRAFT → PENDING_APPROVAL → APPROVED → PROCESSED → PAID)
+  - Employee payroll for specific periods (weekly, biweekly, monthly)
+  - Payroll line items (salary, overtime, bonuses, deductions, taxes)
+  - Automatic calculation of gross pay, deductions, taxes, and net pay
+  - Business methods: create, calculate, submit_for_approval, approve, process, mark_as_paid, cancel
+  - Domain events: PayrollCreated, PayrollCalculated, PayrollApproved, PayrollProcessed, PayrollPaid
+  - Audit trail: created_at, updated_at, approved_at, processed_at, paid_at
+
+- **Value Objects**:
+  - `PayrollStatus`: Enum (DRAFT, PENDING_APPROVAL, APPROVED, PROCESSED, PAID, CANCELLED)
+  - `PayrollPeriodType`: Enum (WEEKLY, BIWEEKLY, MONTHLY)
+  - `PayrollLineType`: Enum (BASE_SALARY, HOURLY_WAGE, OVERTIME, BONUS, COMMISSION, DEDUCTION, TAX, ABSENCE_DEDUCTION)
+  - `PayrollPeriod`: Immutable period with start/end dates and type
+  - `PayrollLine`: Individual line item with type, description, quantity, rate, amount
+  - `PayrollSummary`: Calculation summary (gross_pay, total_deductions, total_taxes, net_pay)
+  - `PayrollDataCollection`: Aggregates data from contracts, bonuses, absences for calculation
+  - `AbsenceImpact`: Tracks absence impact on payroll (days, deduction amount)
+
+- **Domain Services**:
+  - `PayrollCalculationService`: Core calculation engine
+    - Collects data from employee contracts (via adapter)
+    - Collects bonuses for the period (via adapter)
+    - Collects absences and calculates deductions (via adapter)
+    - Creates payroll lines for each component
+    - Calculates gross pay, deductions, taxes (20% of gross), net pay
+    - Validates calculations and ensures business rules
+
+#### Infrastructure Layer
+- **ORM Model**: PayrollORM with full domain fields
+- **Repository**: SQLAlchemyPayrollRepository with async operations
+  - Full CRUD operations with domain entity mapping
+  - Queries by employee, period, status
+  - Proper relationship handling to avoid MissingGreenlet errors
+- **Adapters (Anti-Corruption Layer)**:
+  - `PayrollDataGatheringAdapter`: Fetches data from Employee, Contract, Bonus, Absence modules
+    - Uses facades to maintain bounded context boundaries
+    - Translates DTOs to domain value objects
+  - `PayrollValidationAdapter`: Validates business rules across modules
+    - Validates employee exists and is active
+    - Validates employee has active contract for period
+    - Checks for duplicate payrolls for same employee/period
+- **Read Model**: PayrollReadModel for efficient queries
+  - Optimized for list views and reporting
+  - Separate from write-side for CQRS pattern
+
+#### Application Layer (CQRS)
+- **Commands**: CreatePayroll, CalculatePayroll, ApprovePayroll, ProcessPayroll, MarkPayrollAsPaid
+- **Queries**: GetPayroll, ListPayrolls, ListPayrollsByEmployee
+- **Handlers**: One handler per command/query with full validation
+  - `CreatePayrollHandler`: Creates payroll with validation (employee exists, contract exists, no duplicates)
+  - `CalculatePayrollHandler`: Orchestrates calculation service with data gathering
+  - `ApprovePayrollHandler`: Approves payroll after validation
+  - `ProcessPayrollHandler`: Marks payroll as processed
+  - `MarkPayrollAsPaidHandler`: Records payment with reference number
+
+#### API Layer
+- **Facade**: IPayrollFacade interface (not yet created - TODO if other modules need it)
+- Inter-module communication via adapters to Employee, Contract, Bonus, Absence facades
+
+#### Presentation Layer (HTTP API)
+- POST /api/v1/payroll/ - Create payroll for employee/period (201)
+- GET /api/v1/payroll/{id} - Get payroll details with lines and summary
+- GET /api/v1/payroll/ - List all payrolls (paginated)
+- GET /api/v1/payroll/employee/{employee_id} - List payrolls for employee
+- POST /api/v1/payroll/{id}/calculate - Calculate payroll (transitions to PENDING_APPROVAL)
+- POST /api/v1/payroll/{id}/approve - Approve payroll (requires approved_by UUID)
+- POST /api/v1/payroll/{id}/process - Process approved payroll
+- POST /api/v1/payroll/{id}/mark-paid - Mark as paid with payment reference
+
+**Typical Workflow:**
+1. POST /payroll/ → Creates payroll with status=`DRAFT`
+2. POST /payroll/{id}/calculate → Gathers data, calculates, sets status=`PENDING_APPROVAL`
+3. POST /payroll/{id}/approve → Manager approves, sets status=`APPROVED`
+4. POST /payroll/{id}/process → Processes payment, sets status=`PROCESSED`
+5. POST /payroll/{id}/mark-paid → Records payment completion, sets status=`PAID`
+
+#### Calculation Engine
+- **Data Sources**: Integrates with 4 modules via adapters:
+  - Employee module: Employee details and active status
+  - Contract module: Base salary, hourly rates, working hours
+  - Bonus module: Bonuses for the payroll period
+  - Absence module: Absences and deductions
+- **Line Items Generated**:
+  - BASE_SALARY or HOURLY_WAGE (from contract)
+  - BONUS (for each bonus in period)
+  - ABSENCE_DEDUCTION (for each absence)
+  - TAX (20% of gross pay)
+- **Summary Calculation**:
+  - Gross Pay = Sum of positive lines (salary, bonuses, overtime)
+  - Total Deductions = Sum of deduction lines (absences)
+  - Total Taxes = 20% of gross pay
+  - Net Pay = Gross Pay - Total Deductions - Total Taxes
+
+#### Tests
+- **Domain Tests** (26): Payroll lifecycle, status transitions, calculation logic, validation, domain events
+- **Service Tests** (17): Calculation service, data gathering, integration with adapters
+- **API Tests** (11): CRUD operations, workflow, validation, error handling
+- **Coverage**: 54/54 tests passing (100%)
+
+#### Task Commands
+```bash
+task test-payroll           # Run payroll module tests
+```
+
+### ✅ M8: Reporting Module (Completed)
+
+#### Domain Layer
+- **Report** aggregate root with:
+  - Report metadata (name, type, format)
+  - Status management (PENDING, PROCESSING, COMPLETED, FAILED)
+  - Report parameters (employee_id, department, date ranges, filters)
+  - Lifecycle methods (start_processing, complete, fail)
+  - Query methods (is_completed, is_failed, is_processing, is_pending)
+
+- **Value Objects**:
+  - `ReportType`: Enum (PAYROLL_SUMMARY, EMPLOYEE_COMPENSATION, ABSENCE_SUMMARY, TIMESHEET_SUMMARY, TAX_REPORT, CUSTOM)
+  - `ReportFormat`: Enum (PDF, CSV, XLSX, JSON)
+  - `ReportStatus`: Enum (PENDING, PROCESSING, COMPLETED, FAILED)
+  - `ReportParameters`: Immutable report filter parameters
+
+- **Domain Services**:
+  - `CreateReportService`: Creates report with specified parameters
+  - `ProcessReportService`: Manages report processing lifecycle (start, complete, fail)
+
+#### Infrastructure Layer
+- **ORM Model**: ReportORM with all report fields
+- **Repository**: SQLAlchemyReportRepository with async operations
+- Support for multiple report types and formats
+- Status-based and type-based report querying
+
+#### Application Layer (CQRS)
+- **Commands**: CreateReport, StartProcessing, CompleteProcessing, FailProcessing, DeleteReport
+- **Queries**: GetReport, ListReports, ListReportsByType, ListReportsByStatus
+- **Handlers**: One handler per command/query with business validation
+
+#### API Layer
+- **Facade**: IReportingFacade interface and ReportingFacade implementation
+- **DTOs**: ReportDTO for data exchange between modules
+- **Methods**: get_report, list_reports_by_type, list_reports_by_status, report_exists
+
+#### Presentation Layer (HTTP API)
+- POST /api/v1/reporting/ - Create report (201, status=pending)
+- GET /api/v1/reporting/{id} - Get report details and check status
+- GET /api/v1/reporting/ - List all reports
+- GET /api/v1/reporting/type/{type} - Filter reports by type
+- GET /api/v1/reporting/status/{status} - Filter reports by status
+- POST /api/v1/reporting/{id}/generate - Trigger report generation (currently sync, should be async)
+- GET /api/v1/reporting/{id}/download - Download completed report file
+- DELETE /api/v1/reporting/{id} - Delete report
+
+**Client Workflow:**
+1. POST /reporting/ → Creates report with status=`pending`
+2. POST /reporting/{id}/generate → Backend generates file, sets status=`completed`/`failed`
+3. GET /reporting/{id} → Poll to check status
+4. GET /reporting/{id}/download → Download when status=`completed`
+
+**⚠️ Current Implementation:** `/generate` is synchronous (blocks until complete).
+**🚀 Production Recommendation:** Implement async generation with Celery/RabbitMQ, auto-queue on creation, client polls for status.
+
+#### Report Generation
+- **PDF Generator**: Creates formatted PDF reports with tables using ReportLab
+- **CSV Generator**: Generates CSV files with report data
+- **XLSX Generator**: Creates Excel spreadsheets with formatting using openpyxl
+- **JSON Generator**: Outputs structured JSON reports
+- **Data Sources**: Fetches data for payroll, compensation, absence, timesheet, and tax reports
+- **File Storage**: Reports stored in `/tmp/reports` directory
+
+#### Tests
+- **Domain Tests** (12): Report creation, status management, lifecycle transitions, validation
+- **API Tests** (12): CRUD operations, status changes, filtering by type and status
+- **Coverage**: 24/24 tests passing (100%)
+
+#### Task Commands
+```bash
+task test-reporting          # Run reporting module tests
+```
 
 ## Troubleshooting
 
