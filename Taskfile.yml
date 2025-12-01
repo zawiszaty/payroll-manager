@@ -95,6 +95,11 @@ tasks:
     cmds:
       - docker compose exec backend pytest app/modules/absence/tests/ -v
 
+  test-timesheet:
+    desc: Run timesheet module tests
+    cmds:
+      - docker compose exec backend pytest app/modules/timesheet/tests/ -v
+
   test-reporting:
     desc: Run reporting module tests
     cmds:
