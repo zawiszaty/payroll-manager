@@ -5,8 +5,8 @@ from datetime import datetime
 from typing import Any
 
 from app.modules.audit.domain.events import AuditLogCreatedEvent
+from app.shared.domain.events import get_event_dispatcher
 from app.shared.infrastructure.event_registry import EventHandlerRegistry
-from app.shared.infrastructure.rabbitmq import get_rabbitmq_publisher
 
 logger = logging.getLogger(__name__)
 
@@ -35,12 +35,8 @@ class ContractAuditEventHandler:
                 occurred_at=datetime.fromisoformat(event_data["occurred_at"]),
             )
 
-            publisher = get_rabbitmq_publisher()
-            await publisher.publish_event(
-                event_type="AuditLogCreatedEvent",
-                event_data=audit_event.model_dump(mode="json"),
-                module="audit",
-            )
+            dispatcher = get_event_dispatcher()
+            await dispatcher.dispatch(audit_event)
 
             logger.info(f"Emitted audit event for contract created: {event_data['contract_id']}")
         except Exception as e:
@@ -65,12 +61,8 @@ class ContractAuditEventHandler:
                 occurred_at=datetime.fromisoformat(event_data["occurred_at"]),
             )
 
-            publisher = get_rabbitmq_publisher()
-            await publisher.publish_event(
-                event_type="AuditLogCreatedEvent",
-                event_data=audit_event.model_dump(mode="json"),
-                module="audit",
-            )
+            dispatcher = get_event_dispatcher()
+            await dispatcher.dispatch(audit_event)
 
             logger.info(f"Emitted audit event for contract activated: {event_data['contract_id']}")
         except Exception as e:
@@ -96,12 +88,8 @@ class ContractAuditEventHandler:
                 occurred_at=datetime.fromisoformat(event_data["occurred_at"]),
             )
 
-            publisher = get_rabbitmq_publisher()
-            await publisher.publish_event(
-                event_type="AuditLogCreatedEvent",
-                event_data=audit_event.model_dump(mode="json"),
-                module="audit",
-            )
+            dispatcher = get_event_dispatcher()
+            await dispatcher.dispatch(audit_event)
 
             logger.info(f"Emitted audit event for contract canceled: {event_data['contract_id']}")
         except Exception as e:
@@ -126,12 +114,8 @@ class ContractAuditEventHandler:
                 occurred_at=datetime.fromisoformat(event_data["occurred_at"]),
             )
 
-            publisher = get_rabbitmq_publisher()
-            await publisher.publish_event(
-                event_type="AuditLogCreatedEvent",
-                event_data=audit_event.model_dump(mode="json"),
-                module="audit",
-            )
+            dispatcher = get_event_dispatcher()
+            await dispatcher.dispatch(audit_event)
 
             logger.info(f"Emitted audit event for contract expired: {event_data['contract_id']}")
         except Exception as e:

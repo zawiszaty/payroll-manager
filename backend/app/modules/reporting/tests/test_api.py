@@ -369,3 +369,75 @@ async def test_delete_report(client, test_session):
 
     response = await client.get(f"/api/v1/reporting/{report.id}")
     assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_delete_nonexistent_report(client):
+    """Test deleting a report that doesn't exist"""
+    non_existent_id = uuid4()
+    response = await client.delete(f"/api/v1/reporting/{non_existent_id}")
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_create_report_with_invalid_date_format(client):
+    """Test creating a report with invalid date format"""
+    response = await client.post(
+        "/api/v1/reporting/",
+        json={
+            "name": "Test Report",
+            "report_type": "payroll_summary",
+            "format": "pdf",
+            "start_date": "not-a-date",
+        },
+    )
+    assert response.status_code == 400
+    assert "Invalid start_date format" in response.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_list_reports_by_invalid_type(client):
+    """Test listing reports with an invalid type"""
+    response = await client.get("/api/v1/reporting/type/invalid_report_type")
+    assert response.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_list_reports_by_invalid_status(client):
+    """Test listing reports with an invalid status"""
+    response = await client.get("/api/v1/reporting/status/invalid_status")
+    assert response.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_download_report_file_not_exists(client, test_session):
+    """Test downloading a completed report where file doesn't exist on disk"""
+    from app.modules.reporting.domain.entities import Report
+    from app.modules.reporting.domain.value_objects import (
+        ReportFormat,
+        ReportParameters,
+        ReportType,
+    )
+    from app.modules.reporting.infrastructure.repository import (
+        SQLAlchemyReportRepository,
+    )
+
+    repository = SQLAlchemyReportRepository(test_session)
+
+    # Create completed report with non-existent file path
+    params = ReportParameters()
+    report = Report(
+        name="Test Report",
+        report_type=ReportType.PAYROLL_SUMMARY,
+        format=ReportFormat.PDF,
+        parameters=params,
+    )
+    report.start_processing()
+    report.complete("/nonexistent/path/report.pdf")
+
+    await repository.save(report)
+    await test_session.commit()
+
+    response = await client.get(f"/api/v1/reporting/{report.id}/download")
+    assert response.status_code == 404
+    assert "does not exist on disk" in response.json()["detail"]
