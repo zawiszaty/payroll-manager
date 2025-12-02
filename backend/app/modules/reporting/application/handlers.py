@@ -155,7 +155,7 @@ class GenerateReportHandler:
 
     async def _generate_report_file(self, report: Report) -> Path:
         report.start_processing()
-        await self.repository.update(report)
+        await self.repository.save(report)
 
         try:
             data = await self._fetch_report_data(report)
@@ -163,13 +163,13 @@ class GenerateReportHandler:
             file_path = await generator.generate(report, data)
 
             report.complete(str(file_path))
-            await self.repository.update(report)
+            await self.repository.save(report)
 
             return file_path
 
         except Exception as e:
             report.fail(str(e))
-            await self.repository.update(report)
+            await self.repository.save(report)
             raise
 
     async def _fetch_report_data(self, report: Report) -> dict[str, Any]:

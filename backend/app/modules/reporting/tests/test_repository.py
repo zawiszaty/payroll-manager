@@ -65,7 +65,7 @@ async def test_repository_update(test_session):
 
     # Start processing
     report.start_processing()
-    await repository.update(report)
+    await repository.save(report)
     await test_session.commit()
 
     # Retrieve and verify
@@ -262,7 +262,7 @@ async def test_repository_update_with_parameters(test_session):
     # Update the report
     report.start_processing()
     report.complete("/app/reports/test.csv")
-    await repository.update(report)
+    await repository.save(report)
     await test_session.commit()
 
     # Retrieve and verify all fields preserved

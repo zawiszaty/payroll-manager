@@ -95,55 +95,11 @@ class SQLAlchemyEmployeeRepository(EmployeeRepository):
         return orm
 
     async def save(self, employee: Employee) -> Employee:
-        """
-        Save an employee to the database (add or update).
-        Note: Domain events are NOT dispatched here - they must be dispatched
-        by the caller after the transaction is committed to avoid publishing
-        events for changes that might be rolled back.
-        """
-        from sqlalchemy import delete as sql_delete
-
-        # Check if employee exists
-        stmt = select(EmployeeORM).where(EmployeeORM.id == employee.id)
-        result = await self.session.execute(stmt)
-        existing_orm = result.scalar_one_or_none()
-
-        if existing_orm:
-            # Update existing employee
-            existing_orm.first_name = employee.first_name
-            existing_orm.last_name = employee.last_name
-            existing_orm.email = employee.email
-            existing_orm.phone = employee.phone
-            existing_orm.date_of_birth = employee.date_of_birth
-            existing_orm.hire_date = employee.hire_date
-
-            await self.session.flush()
-
-            # Delete and recreate statuses
-            delete_stmt = sql_delete(EmploymentStatusORM).where(
-                EmploymentStatusORM.employee_id == employee.id
-            )
-            await self.session.execute(delete_stmt)
-
-            for status in employee.statuses:
-                status_orm = EmploymentStatusORM(
-                    employee_id=employee.id,
-                    status_type=status.status_type,
-                    valid_from=status.date_range.valid_from,
-                    valid_to=status.date_range.valid_to,
-                    reason=status.reason,
-                )
-                self.session.add(status_orm)
-
-            await self.session.flush()
-        else:
-            # Add new employee
-            orm = self._to_orm(employee)
-            self.session.add(orm)
-            await self.session.flush()
-            await self.session.refresh(orm, ["statuses"])
-
-        # Return the original employee with events intact
+        """Save an employee to the database (add or update)."""
+        orm = self._to_orm(employee)
+        merged_orm = await self.session.merge(orm)
+        await self.session.flush()
+        await self.session.refresh(merged_orm, ["statuses"])
         return employee
 
     async def get_by_id(self, employee_id: UUID) -> Optional[Employee]:

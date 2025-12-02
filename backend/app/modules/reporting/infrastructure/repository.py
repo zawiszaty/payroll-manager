@@ -111,17 +111,11 @@ class SQLAlchemyReportRepository(ReportRepository):
             report.clear_domain_events()
 
     async def save(self, report: Report) -> Report:
-        """
-        Save a report to the database.
-        Note: Domain events are NOT dispatched here - they must be dispatched
-        by the caller after the transaction is committed to avoid publishing
-        events for changes that might be rolled back.
-        """
+        """Save a report to the database (add or update)."""
         orm = self._to_orm(report)
-        self.session.add(orm)
+        merged_orm = await self.session.merge(orm)
         await self.session.flush()
-        await self.session.refresh(orm)
-        # Return the original report with events intact, not the new domain model
+        await self.session.refresh(merged_orm)
         return report
 
     async def get_by_id(self, report_id: UUID) -> Report | None:
@@ -148,35 +142,6 @@ class SQLAlchemyReportRepository(ReportRepository):
             .order_by(ReportORM.created_at.desc())
         )
         return [self._to_domain(orm) for orm in result.scalars().all()]
-
-    async def update(self, report: Report) -> Report:
-        result = await self.session.execute(select(ReportORM).where(ReportORM.id == report.id))
-        orm = result.scalar_one_or_none()
-        if not orm:
-            raise ValueError(f"Report {report.id} not found")
-
-        orm.name = report.name
-        orm.report_type = report.report_type
-        orm.format = report.format
-        orm.status = report.status
-        orm.parameters = {
-            "employee_id": report.parameters.employee_id,
-            "department": report.parameters.department,
-            "start_date": report.parameters.start_date.isoformat()
-            if report.parameters.start_date
-            else None,
-            "end_date": report.parameters.end_date.isoformat()
-            if report.parameters.end_date
-            else None,
-            "additional_filters": report.parameters.additional_filters,
-        }
-        orm.file_path = report.file_path
-        orm.error_message = report.error_message
-        orm.completed_at = report.completed_at
-
-        await self.session.flush()
-        await self.session.refresh(orm)
-        return self._to_domain(orm)
 
     async def delete(self, report_id: UUID) -> None:
         await self.session.execute(delete(ReportORM).where(ReportORM.id == report_id))

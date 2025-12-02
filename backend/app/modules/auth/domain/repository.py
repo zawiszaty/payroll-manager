@@ -6,8 +6,8 @@ from app.modules.auth.domain.models import User
 
 class UserRepository(ABC):
     @abstractmethod
-    async def create(self, user: User) -> User:
-        """Create a new user."""
+    async def save(self, user: User) -> User:
+        """Save a user (add or update)."""
         pass
 
     @abstractmethod
@@ -18,11 +18,6 @@ class UserRepository(ABC):
     @abstractmethod
     async def get_by_email(self, email: str) -> User | None:
         """Get user by email."""
-        pass
-
-    @abstractmethod
-    async def update(self, user: User) -> User:
-        """Update an existing user."""
         pass
 
     @abstractmethod

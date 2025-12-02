@@ -74,7 +74,7 @@ async def deactivate_user_command(email: str):
             sys.exit(1)
 
         user.deactivate()
-        await repository.update(user)
+        await repository.save(user)
         await session.commit()
 
         print(f"✓ User {email} deactivated successfully.")
@@ -91,7 +91,7 @@ async def activate_user_command(email: str):
             sys.exit(1)
 
         user.activate()
-        await repository.update(user)
+        await repository.save(user)
         await session.commit()
 
         print(f"✓ User {email} activated successfully.")

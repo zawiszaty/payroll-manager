@@ -53,7 +53,7 @@ class CreateRateHandler:
             valid_to=command.valid_to,
             description=command.description,
         )
-        return await self.repository.add(rate)
+        return await self.repository.save(rate)
 
 
 class GetRateHandler:
@@ -103,7 +103,7 @@ class CreateBonusHandler:
             payment_date=command.payment_date,
             description=command.description,
         )
-        return await self.repository.add(bonus)
+        return await self.repository.save(bonus)
 
 
 class GetBonusHandler:
@@ -146,7 +146,7 @@ class CreateDeductionHandler:
             valid_to=command.valid_to,
             description=command.description,
         )
-        return await self.repository.add(deduction)
+        return await self.repository.save(deduction)
 
 
 class GetDeductionsByEmployeeHandler:
@@ -178,7 +178,7 @@ class CreateOvertimeHandler:
             valid_from=command.valid_from,
             valid_to=command.valid_to,
         )
-        return await self.repository.add(overtime)
+        return await self.repository.save(overtime)
 
 
 class GetOvertimeByEmployeeHandler:
@@ -202,7 +202,7 @@ class CreateSickLeaveHandler:
             valid_from=command.valid_from,
             valid_to=command.valid_to,
         )
-        return await self.repository.add(sick_leave)
+        return await self.repository.save(sick_leave)
 
 
 class GetSickLeaveByEmployeeHandler:

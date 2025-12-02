@@ -49,7 +49,7 @@ class ExpireContractsService:
             logger.info(f"Expiring contract {contract.id} for employee {contract.employee_id}")
             try:
                 contract.expire()
-                updated_contract = await self.repository.update(contract)
+                updated_contract = await self.repository.save(contract)
                 expired_contracts.append(updated_contract)
             except Exception as e:
                 logger.error(f"Failed to expire contract {contract.id}: {e}")

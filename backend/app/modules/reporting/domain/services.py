@@ -46,12 +46,12 @@ class ProcessReportService:
 
     async def start_processing(self, report: Report) -> Report:
         report.start_processing()
-        return await self.repository.update(report)
+        return await self.repository.save(report)
 
     async def complete_processing(self, report: Report, file_path: str) -> Report:
         report.complete(file_path)
-        return await self.repository.update(report)
+        return await self.repository.save(report)
 
     async def fail_processing(self, report: Report, error_message: str) -> Report:
         report.fail(error_message)
-        return await self.repository.update(report)
+        return await self.repository.save(report)

@@ -8,7 +8,7 @@ from app.modules.contract.domain.models import Contract
 
 class ContractRepository(ABC):
     @abstractmethod
-    async def add(self, contract: Contract) -> Contract:
+    async def save(self, contract: Contract) -> Contract:
         pass
 
     @abstractmethod
@@ -25,10 +25,6 @@ class ContractRepository(ABC):
 
     @abstractmethod
     async def list(self, skip: int = 0, limit: int = 100) -> List[Contract]:
-        pass
-
-    @abstractmethod
-    async def update(self, contract: Contract) -> Contract:
         pass
 
     @abstractmethod
