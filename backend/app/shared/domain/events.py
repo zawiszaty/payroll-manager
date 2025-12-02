@@ -36,9 +36,13 @@ class AsyncEventDispatcher:
                     exc_info=exception,
                 )
         except asyncio.CancelledError:
-            logger.warning(f"Event publishing task cancelled - event_type: {event_type}, event_id: {event_id}")
+            logger.warning(
+                f"Event publishing task cancelled - event_type: {event_type}, event_id: {event_id}"
+            )
         except Exception as e:
-            logger.error(f"Error handling task exception - event_type: {event_type}, event_id: {event_id}: {e}")
+            logger.error(
+                f"Error handling task exception - event_type: {event_type}, event_id: {event_id}: {e}"
+            )
 
     async def dispatch(self, event: DomainEvent) -> None:
         try:
