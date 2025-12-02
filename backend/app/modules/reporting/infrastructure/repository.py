@@ -1,3 +1,4 @@
+import logging
 from datetime import date
 from uuid import UUID
 
@@ -13,10 +14,15 @@ from app.modules.reporting.domain.value_objects import (
 )
 from app.modules.reporting.infrastructure.models import ReportORM
 
+logger = logging.getLogger(__name__)
+
 
 class SQLAlchemyReportRepository(ReportRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
+        from app.shared.domain.events import get_event_dispatcher
+
+        self.event_dispatcher = get_event_dispatcher()
 
     def _to_domain(self, orm: ReportORM) -> Report:
         params_dict = orm.parameters or {}
@@ -77,12 +83,46 @@ class SQLAlchemyReportRepository(ReportRepository):
             completed_at=report.completed_at,
         )
 
+    async def _dispatch_events(self, report: Report) -> None:
+        """
+        Dispatch all domain events for the report.
+        Errors are logged but don't prevent the operation from succeeding.
+        """
+        events = report.get_domain_events()
+        if not events:
+            return
+
+        try:
+            # Dispatch all events sequentially to ensure they propagate
+            for event in events:
+                try:
+                    await self.event_dispatcher.dispatch(event)
+                    logger.debug(f"Successfully dispatched event: {event.__class__.__name__}")
+                except Exception as e:
+                    # Log the error with context but don't fail the entire operation
+                    logger.error(
+                        f"Failed to dispatch event {event.__class__.__name__} "
+                        f"for report {report.id}: {e}",
+                        exc_info=True,
+                    )
+                    # In production, you might want to queue failed events for retry
+        finally:
+            # Always clear events even if dispatch fails to avoid re-dispatch
+            report.clear_domain_events()
+
     async def save(self, report: Report) -> Report:
+        """
+        Save a report to the database.
+        Note: Domain events are NOT dispatched here - they must be dispatched
+        by the caller after the transaction is committed to avoid publishing
+        events for changes that might be rolled back.
+        """
         orm = self._to_orm(report)
         self.session.add(orm)
         await self.session.flush()
         await self.session.refresh(orm)
-        return self._to_domain(orm)
+        # Return the original report with events intact, not the new domain model
+        return report
 
     async def get_by_id(self, report_id: UUID) -> Report | None:
         result = await self.session.execute(select(ReportORM).where(ReportORM.id == report_id))

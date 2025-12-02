@@ -14,7 +14,7 @@ from app.modules.reporting.domain.generators import IReportGenerator
 
 
 class PDFReportGenerator(IReportGenerator):
-    def __init__(self, output_dir: str = "/tmp/reports"):
+    def __init__(self, output_dir: str = "/app/reports"):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -93,7 +93,7 @@ class PDFReportGenerator(IReportGenerator):
 
 
 class CSVReportGenerator(IReportGenerator):
-    def __init__(self, output_dir: str = "/tmp/reports"):
+    def __init__(self, output_dir: str = "/app/reports"):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -123,7 +123,7 @@ class CSVReportGenerator(IReportGenerator):
 
 
 class XLSXReportGenerator(IReportGenerator):
-    def __init__(self, output_dir: str = "/tmp/reports"):
+    def __init__(self, output_dir: str = "/app/reports"):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -173,7 +173,7 @@ class XLSXReportGenerator(IReportGenerator):
 
 
 class JSONReportGenerator(IReportGenerator):
-    def __init__(self, output_dir: str = "/tmp/reports"):
+    def __init__(self, output_dir: str = "/app/reports"):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -208,7 +208,7 @@ class JSONReportGenerator(IReportGenerator):
 
 
 class ReportGeneratorFactory:
-    def __init__(self, output_dir: str = "/tmp/reports"):
+    def __init__(self, output_dir: str = "/app/reports"):
         self.generators: list[IReportGenerator] = [
             PDFReportGenerator(output_dir),
             CSVReportGenerator(output_dir),

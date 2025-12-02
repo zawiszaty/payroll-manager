@@ -4,6 +4,7 @@ from typing import List, Optional
 from uuid import UUID, uuid4
 
 from app.modules.employee.domain.value_objects import EmploymentStatus, EmploymentStatusType
+from app.shared.domain.events import DomainEvent
 
 
 @dataclass
@@ -18,6 +19,7 @@ class Employee:
     statuses: List[EmploymentStatus] = field(default_factory=list)
     created_at: date = field(default_factory=date.today)
     updated_at: date = field(default_factory=date.today)
+    _domain_events: List[DomainEvent] = field(default_factory=list, init=False, repr=False)
 
     def add_status(self, status: EmploymentStatus) -> None:
         for existing_status in self.statuses:
@@ -39,3 +41,12 @@ class Employee:
     @property
     def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}"
+
+    def _add_domain_event(self, event: DomainEvent) -> None:
+        self._domain_events.append(event)
+
+    def get_domain_events(self) -> List[DomainEvent]:
+        return self._domain_events.copy()
+
+    def clear_domain_events(self) -> None:
+        self._domain_events.clear()

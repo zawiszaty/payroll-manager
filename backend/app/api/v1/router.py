@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.modules.absence.presentation.routes import router as absence_router
+from app.modules.audit.presentation.endpoints import router as audit_router
 from app.modules.compensation.presentation.endpoints import router as compensation_router
 from app.modules.contract.presentation.endpoints import router as contract_router
 from app.modules.employee.presentation.endpoints import router as employee_router
@@ -16,3 +17,4 @@ api_router.include_router(absence_router, prefix="/absence", tags=["absence"])
 api_router.include_router(timesheet_router, prefix="/timesheet", tags=["timesheet"])
 api_router.include_router(payroll_router, prefix="/payroll", tags=["payroll"])
 api_router.include_router(reporting_router, prefix="/reporting", tags=["reporting"])
+api_router.include_router(audit_router, prefix="/audit", tags=["audit"])

@@ -1,6 +1,7 @@
 from datetime import date
 from typing import Optional
 
+from app.modules.employee.domain.events import EmployeeCreatedEvent, EmployeeStatusChangedEvent
 from app.modules.employee.domain.models import Employee
 from app.modules.employee.domain.value_objects import EmploymentStatus, EmploymentStatusType
 from app.shared.domain.value_objects import DateRange
@@ -19,6 +20,16 @@ class CreateEmployeeService:
         )
         employee.add_status(initial_status)
 
+        employee._add_domain_event(
+            EmployeeCreatedEvent(
+                employee_id=employee.id,
+                first_name=employee.first_name,
+                last_name=employee.last_name,
+                email=employee.email,
+                hire_date=employee.hire_date,
+            )
+        )
+
         return employee
 
 
@@ -33,6 +44,8 @@ class ChangeEmployeeStatusService:
         from datetime import timedelta
 
         current_status = employee.get_status_at(date.today())
+        old_status_value = current_status.status_type.value if current_status else None
+
         if current_status:
             closed_status = EmploymentStatus(
                 status_type=current_status.status_type,
@@ -55,5 +68,17 @@ class ChangeEmployeeStatusService:
             reason=reason,
         )
         employee.add_status(new_status)
+
+        if old_status_value:
+            employee._add_domain_event(
+                EmployeeStatusChangedEvent(
+                    employee_id=employee.id,
+                    old_status=old_status_value,
+                    new_status=new_status_type.value,
+                    status_valid_from=effective_date,
+                    status_valid_to=new_status.date_range.valid_to,
+                    reason=reason,
+                )
+            )
 
         return employee

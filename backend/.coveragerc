@@ -1,0 +1,22 @@
+[run]
+omit =
+    */tests/*
+    */migrations/*
+    */__pycache__/*
+    */site-packages/*
+    # Exclude infrastructure components that don't need unit tests
+    */infrastructure/adapters.py
+    */infrastructure/generators.py
+    */infrastructure/consumer.py
+    */infrastructure/event_handlers.py
+    */api/facade.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == ["']__main__["']:
+    if TYPE_CHECKING:
+    @abstractmethod

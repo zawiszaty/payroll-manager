@@ -38,3 +38,13 @@ class ReportParameters:
         if self.start_date and self.end_date:
             if self.start_date > self.end_date:
                 raise ValueError("Start date must be before or equal to end date")
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary for serialization"""
+        return {
+            "employee_id": self.employee_id,
+            "department": self.department,
+            "start_date": self.start_date.isoformat() if self.start_date else None,
+            "end_date": self.end_date.isoformat() if self.end_date else None,
+            "additional_filters": self.additional_filters,
+        }

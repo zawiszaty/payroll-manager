@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from uuid import UUID
 
@@ -9,12 +10,10 @@ from app.database import get_db
 from app.modules.reporting.application.commands import (
     CreateReportCommand,
     DeleteReportCommand,
-    GenerateReportCommand,
 )
 from app.modules.reporting.application.handlers import (
     CreateReportHandler,
     DeleteReportHandler,
-    GenerateReportHandler,
     GetReportHandler,
     ListReportsByStatusHandler,
     ListReportsByTypeHandler,
@@ -26,8 +25,6 @@ from app.modules.reporting.application.queries import (
     ListReportsByTypeQuery,
     ListReportsQuery,
 )
-from app.modules.reporting.infrastructure.adapters import ReportingDataAdapter
-from app.modules.reporting.infrastructure.generators import ReportGeneratorFactory
 from app.modules.reporting.infrastructure.repository import (
     SQLAlchemyReportRepository,
 )
@@ -36,6 +33,8 @@ from app.modules.reporting.presentation.schemas import (
     ReportListResponse,
     ReportResponse,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -61,6 +60,22 @@ async def create_report(
     try:
         report = await handler.handle(command)
         await db.commit()
+
+        # Dispatch events AFTER successful commit
+        from app.shared.domain.events import get_event_dispatcher
+
+        dispatcher = get_event_dispatcher()
+        events = report.get_domain_events()
+        for event in events:
+            try:
+                await dispatcher.dispatch(event)
+            except Exception as dispatch_error:
+                # Log but don't fail the request - event dispatch is async
+                logger.error(
+                    f"Failed to dispatch event {event.__class__.__name__}: {dispatch_error}"
+                )
+        report.clear_domain_events()
+
         return ReportResponse.from_entity(report)
     except ValueError as e:
         await db.rollback()
@@ -126,44 +141,6 @@ async def list_reports_by_status(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.post("/{report_id}/generate", response_model=ReportResponse)
-async def generate_report(report_id: UUID, db: AsyncSession = Depends(get_db)) -> ReportResponse:
-    repository = SQLAlchemyReportRepository(db)
-    generator_factory = ReportGeneratorFactory()
-    data_adapter = ReportingDataAdapter(db)
-    handler = GenerateReportHandler(repository, generator_factory, data_adapter)
-
-    command = GenerateReportCommand(report_id=report_id)
-
-    try:
-        report = await handler.handle(command)
-        await db.commit()
-        return ReportResponse.from_entity(report)
-    except ValueError as e:
-        await db.rollback()
-        error_msg = str(e)
-        if "not found" in error_msg:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=error_msg)
-        elif "already generated" in error_msg:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Report already generated. Use /download to get the file.",
-            )
-        elif "currently being generated" in error_msg:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Report is currently being generated. Please wait.",
-            )
-        else:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
-    except Exception as e:
-        await db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Report generation failed: {str(e)}",
-        )
-
-
 @router.get("/{report_id}/download")
 async def download_report(report_id: UUID, db: AsyncSession = Depends(get_db)):
     repository = SQLAlchemyReportRepository(db)
@@ -178,7 +155,7 @@ async def download_report(report_id: UUID, db: AsyncSession = Depends(get_db)):
     if not report.is_completed():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Report is not ready for download. Current status: {report.status.value}. Please call /generate first.",
+            detail=f"Report is not ready for download. Current status: {report.status.value}. Please wait for generation to complete.",
         )
 
     if not report.file_path:

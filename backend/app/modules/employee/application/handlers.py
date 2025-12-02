@@ -10,6 +10,7 @@ from app.modules.employee.application.queries import (
     GetEmployeeQuery,
     ListEmployeesQuery,
 )
+from app.modules.employee.domain.events import EmployeeUpdatedEvent
 from app.modules.employee.domain.models import Employee
 from app.modules.employee.domain.repository import EmployeeRepository
 from app.modules.employee.domain.services import ChangeEmployeeStatusService, CreateEmployeeService
@@ -47,6 +48,33 @@ class UpdateEmployeeHandler:
         if not employee:
             raise ValueError(f"Employee {command.employee_id} not found")
 
+        old_values = {}
+        new_values = {}
+
+        if command.first_name is not None and command.first_name != employee.first_name:
+            old_values["first_name"] = employee.first_name
+            new_values["first_name"] = command.first_name
+
+        if command.last_name is not None and command.last_name != employee.last_name:
+            old_values["last_name"] = employee.last_name
+            new_values["last_name"] = command.last_name
+
+        if command.email is not None and command.email != employee.email:
+            old_values["email"] = employee.email
+            new_values["email"] = command.email
+
+        if command.phone is not None and command.phone != employee.phone:
+            old_values["phone"] = employee.phone
+            new_values["phone"] = command.phone
+
+        if command.date_of_birth is not None and command.date_of_birth != employee.date_of_birth:
+            old_values["date_of_birth"] = (
+                employee.date_of_birth.isoformat() if employee.date_of_birth else None
+            )
+            new_values["date_of_birth"] = (
+                command.date_of_birth.isoformat() if command.date_of_birth else None
+            )
+
         updated_employee = Employee(
             id=employee.id,
             first_name=command.first_name
@@ -63,6 +91,13 @@ class UpdateEmployeeHandler:
             created_at=employee.created_at,
             updated_at=employee.updated_at,
         )
+
+        if old_values:
+            updated_employee._add_domain_event(
+                EmployeeUpdatedEvent(
+                    employee_id=employee.id, old_values=old_values, new_values=new_values
+                )
+            )
 
         return await self.repository.update(updated_employee)
 
