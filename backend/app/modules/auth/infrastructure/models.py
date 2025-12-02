@@ -18,7 +18,7 @@ class UserModel(Base):
     role: Mapped[UserRole] = mapped_column(
         Enum(UserRole, name="user_role", create_type=True),
         nullable=False,
-        default=UserRole.ADMIN,
+        default=UserRole.USER,  # Least-privilege default; admin must be explicitly set
     )
     status: Mapped[UserStatus] = mapped_column(
         Enum(UserStatus, name="user_status", create_type=True),

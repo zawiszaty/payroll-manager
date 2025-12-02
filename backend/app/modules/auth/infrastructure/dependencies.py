@@ -10,6 +10,7 @@ from app.modules.auth.domain.models import User
 from app.modules.auth.infrastructure.repository import SqlAlchemyUserRepository
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 
 async def get_user_repository(
@@ -53,7 +54,7 @@ async def get_current_active_user(current_user: Annotated[User, Depends(get_curr
 
 # Optional: get user ID or None (for endpoints that work with or without auth)
 async def get_optional_current_user(
-    token: str | None = Depends(oauth2_scheme),
+    token: str | None = Depends(oauth2_scheme_optional),
     auth_service: AuthenticationService = Depends(get_auth_service),
 ) -> User | None:
     """Get current user if authenticated, None otherwise."""

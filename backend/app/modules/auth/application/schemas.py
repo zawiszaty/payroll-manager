@@ -37,5 +37,5 @@ class UserResponse(BaseModel):
 class CreateUserCommand(BaseModel):
     email: EmailStr
     password: str
-    role: UserRole = UserRole.ADMIN
+    role: UserRole = UserRole.USER
     full_name: str | None = None

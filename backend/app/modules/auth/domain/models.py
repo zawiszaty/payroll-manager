@@ -22,10 +22,10 @@ class User:
     def create(
         email: str,
         hashed_password: str,
-        role: UserRole = UserRole.ADMIN,
+        role: UserRole = UserRole.USER,
         full_name: str | None = None,
     ) -> "User":
-        """Create a new user with default admin role."""
+        """Create a new user with least-privilege default role (USER)."""
         return User(
             email=email,
             hashed_password=hashed_password,
