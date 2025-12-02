@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.modules.auth.infrastructure.dependencies import get_current_active_user
 from app.modules.timesheet.application.commands import (
     ApproveTimesheetCommand,
     CreateTimesheetCommand,
@@ -49,7 +50,7 @@ from app.modules.timesheet.presentation.views import (
     UpdateTimesheetRequest,
 )
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
 
 @router.post("/", response_model=TimesheetResponse, status_code=status.HTTP_201_CREATED)

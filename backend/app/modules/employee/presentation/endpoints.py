@@ -7,6 +7,7 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.modules.auth.infrastructure.dependencies import get_current_active_user
 from app.modules.employee.application.commands import (
     ChangeEmployeeStatusCommand,
     CreateEmployeeCommand,
@@ -28,7 +29,7 @@ from app.shared.infrastructure.pagination import PaginatedResponse, create_pagin
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
 
 class CreateEmployeeRequest(BaseModel):

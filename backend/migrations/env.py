@@ -23,6 +23,7 @@ from app.modules.absence.infrastructure.models import (
     AbsenceBalanceModel,
 )
 from app.modules.audit.infrastructure.models import AuditLogORM
+from app.modules.auth.infrastructure.models import UserModel
 from app.modules.payroll.infrastructure.models import (
     PayrollORM,
     PayrollLineORM,

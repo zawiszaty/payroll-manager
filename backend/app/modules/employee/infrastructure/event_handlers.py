@@ -29,7 +29,7 @@ class EmployeeAuditEventHandler:
                     "email": event_data["email"],
                     "hire_date": event_data.get("hire_date"),
                 },
-                changed_by=None,
+                changed_by=event_data.get("changed_by"),
                 metadata={"source_event": "EmployeeCreatedEvent"},
                 occurred_at=datetime.fromisoformat(event_data["occurred_at"]),
             )
@@ -51,7 +51,7 @@ class EmployeeAuditEventHandler:
                 employee_id=event_data["employee_id"],
                 old_values=event_data["old_values"],
                 new_values=event_data["new_values"],
-                changed_by=None,
+                changed_by=event_data.get("changed_by"),
                 metadata={"source_event": "EmployeeUpdatedEvent"},
                 occurred_at=datetime.fromisoformat(event_data["occurred_at"]),
             )
@@ -73,7 +73,7 @@ class EmployeeAuditEventHandler:
                 employee_id=event_data["employee_id"],
                 old_values={"status": event_data["old_status"]},
                 new_values={"status": event_data["new_status"]},
-                changed_by=None,
+                changed_by=event_data.get("changed_by"),
                 metadata={
                     "source_event": "EmployeeStatusChangedEvent",
                     "valid_from": event_data["status_valid_from"],

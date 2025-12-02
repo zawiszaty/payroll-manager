@@ -30,7 +30,7 @@ class ContractAuditEventHandler:
                     "valid_from": event_data["valid_from"],
                     "valid_to": event_data.get("valid_to"),
                 },
-                changed_by=None,
+                changed_by=event_data.get("changed_by"),
                 metadata={"source_event": "ContractCreatedEvent"},
                 occurred_at=datetime.fromisoformat(event_data["occurred_at"]),
             )
@@ -52,7 +52,7 @@ class ContractAuditEventHandler:
                 employee_id=event_data["employee_id"],
                 old_values=None,
                 new_values=None,
-                changed_by=None,
+                changed_by=event_data.get("changed_by"),
                 metadata={
                     "source_event": "ContractActivatedEvent",
                     "contract_type": event_data["contract_type"],
@@ -78,7 +78,7 @@ class ContractAuditEventHandler:
                 employee_id=event_data["employee_id"],
                 old_values=None,
                 new_values=None,
-                changed_by=None,
+                changed_by=event_data.get("changed_by"),
                 metadata={
                     "source_event": "ContractCanceledEvent",
                     "contract_type": event_data["contract_type"],
@@ -105,7 +105,7 @@ class ContractAuditEventHandler:
                 employee_id=event_data["employee_id"],
                 old_values=None,
                 new_values=None,
-                changed_by=None,
+                changed_by=event_data.get("changed_by"),
                 metadata={
                     "source_event": "ContractExpiredEvent",
                     "contract_type": event_data["contract_type"],

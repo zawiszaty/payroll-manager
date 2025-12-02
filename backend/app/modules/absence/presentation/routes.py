@@ -50,9 +50,10 @@ from app.modules.absence.presentation.schemas import (
     AbsenceListResponse,
     AbsenceResponse,
 )
+from app.modules.auth.infrastructure.dependencies import get_current_active_user
 from app.shared.infrastructure.pagination import PaginatedResponse, create_paginated_response
 
-router = APIRouter(tags=["absence"])
+router = APIRouter(tags=["absence"], dependencies=[Depends(get_current_active_user)])
 
 
 def _to_absence_response(absence) -> AbsenceResponse:

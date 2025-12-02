@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.modules.auth.infrastructure.dependencies import get_current_active_user
 from app.modules.compensation.application.commands import CreateBonusCommand, CreateRateCommand
 from app.modules.compensation.application.handlers import (
     CreateBonusHandler,
@@ -42,7 +43,7 @@ from app.modules.compensation.presentation.views import (
 )
 from app.shared.infrastructure.pagination import PaginatedResponse, create_paginated_response
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
 
 class CreateRateRequest(BaseModel):

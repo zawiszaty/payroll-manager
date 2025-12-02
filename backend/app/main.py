@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import api_router
 from app.config import get_settings
+from app.modules.auth.infrastructure.middleware import AuthContextMiddleware
 
 
 @asynccontextmanager
@@ -42,6 +43,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add authentication context middleware
+app.add_middleware(AuthContextMiddleware)
 
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
