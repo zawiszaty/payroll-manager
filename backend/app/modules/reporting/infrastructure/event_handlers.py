@@ -69,14 +69,13 @@ class ReportingEventHandler:
 
             except Exception as e:
                 logger.error(f"Failed to generate report {report_id}: {e}")
+                await session.rollback()
 
                 # Mark as failed
                 try:
-                    report = await repository.get_by_id(report_id)
-                    if report:
-                        report.fail(str(e))
-                        await repository.update(report)
-                        await session.commit()
+                    report.fail(str(e))
+                    await repository.update(report)
+                    await session.commit()
                 except Exception as update_error:
                     logger.error(f"Failed to update report status: {update_error}")
                     await session.rollback()
