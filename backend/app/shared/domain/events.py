@@ -1,19 +1,18 @@
 import asyncio
 import logging
 from datetime import UTC, datetime
-from uuid import UUID
+from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 logger = logging.getLogger(__name__)
 
 
 class DomainEvent(BaseModel):
-    occurred_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    event_id: UUID = Field(default_factory=lambda: UUID(int=0))
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    class Config:
-        arbitrary_types_allowed = True
+    occurred_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    event_id: UUID = Field(default_factory=uuid4)
 
 
 class AsyncEventDispatcher:

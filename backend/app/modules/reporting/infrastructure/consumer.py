@@ -36,8 +36,9 @@ class ReportGenerationConsumer:
 
             queue = await self.channel.declare_queue("report_generation", durable=True)
 
-            # Bind to report generation events
-            await queue.bind(exchange, routing_key="event.ReportGenerationRequestedEvent")
+            # Bind to report generation events using wildcard
+            # Format: event.payroll-manager.reporting.#
+            await queue.bind(exchange, routing_key="event.payroll-manager.reporting.#")
 
             logger.info("Report generation consumer connected to RabbitMQ")
             await queue.consume(self.process_message)
@@ -49,12 +50,26 @@ class ReportGenerationConsumer:
         async with message.process():
             try:
                 event_data = json.loads(message.body.decode())
-                event_type = message.routing_key.replace("event.", "")
+                routing_key = message.routing_key
+
+                # Parse routing key: event.payroll-manager.reporting.event-name
+                # Convert kebab-case event name to PascalCase for backward compatibility
+                parts = routing_key.split(".")
+                if len(parts) >= 4:
+                    event_name_kebab = ".".join(parts[3:])
+                    event_type = self._kebab_to_pascal_case(event_name_kebab)
+                else:
+                    # Fallback for old format
+                    event_type = routing_key.replace("event.", "")
 
                 await self.handle_event(event_type, event_data)
                 logger.debug(f"Processed report generation event: {event_type}")
             except Exception as e:
                 logger.error(f"Failed to process report generation event: {e}")
+
+    def _kebab_to_pascal_case(self, text: str) -> str:
+        """Convert kebab-case to PascalCase (e.g., report-generation-requested-event -> ReportGenerationRequestedEvent)"""
+        return "".join(word.capitalize() for word in text.split("-"))
 
     async def handle_event(self, event_type: str, event_data: dict) -> None:
         if event_type == "ReportGenerationRequestedEvent":

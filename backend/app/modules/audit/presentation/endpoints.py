@@ -35,8 +35,19 @@ async def list_audit_logs(
     action: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
 ) -> AuditLogListResponse:
-    entity_type_enum = EntityType(entity_type) if entity_type else None
-    action_enum = AuditAction(action) if action else None
+    try:
+        entity_type_enum = EntityType(entity_type) if entity_type else None
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid entity_type: {entity_type}"
+        )
+
+    try:
+        action_enum = AuditAction(action) if action else None
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid action: {action}"
+        )
 
     repository = SQLAlchemyAuditLogRepository(db)
     handler = ListAuditLogsHandler(repository)
@@ -113,7 +124,12 @@ async def get_audit_timeline(
     date_to: Optional[datetime] = None,
     db: AsyncSession = Depends(get_db),
 ) -> AuditLogListResponse:
-    entity_type_enum = EntityType(entity_type) if entity_type else None
+    try:
+        entity_type_enum = EntityType(entity_type) if entity_type else None
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid entity_type: {entity_type}"
+        )
 
     repository = SQLAlchemyAuditLogRepository(db)
     handler = GetAuditTimelineHandler(repository)

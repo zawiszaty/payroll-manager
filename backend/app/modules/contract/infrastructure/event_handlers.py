@@ -4,9 +4,6 @@ import logging
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy.ext.asyncio import async_sessionmaker
-
-from app.database import AsyncSessionLocal
 from app.modules.audit.domain.events import AuditLogCreatedEvent
 from app.shared.infrastructure.event_registry import EventHandlerRegistry
 from app.shared.infrastructure.rabbitmq import get_rabbitmq_publisher
@@ -16,9 +13,6 @@ logger = logging.getLogger(__name__)
 
 class ContractAuditEventHandler:
     """Handler that listens to contract events and emits audit events"""
-
-    def __init__(self, session_factory: async_sessionmaker = AsyncSessionLocal):
-        self.session_factory = session_factory
 
     async def handle_contract_created(self, event_data: dict[str, Any]) -> None:
         """Handle ContractCreatedEvent and emit AuditLogCreatedEvent"""

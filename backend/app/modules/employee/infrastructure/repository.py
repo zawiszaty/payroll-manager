@@ -1,4 +1,4 @@
-import asyncio
+import logging
 from typing import List, Optional
 from uuid import UUID
 
@@ -13,6 +13,8 @@ from app.modules.employee.infrastructure.models import EmployeeORM, EmploymentSt
 from app.shared.domain.events import get_event_dispatcher
 from app.shared.domain.value_objects import DateRange
 
+logger = logging.getLogger(__name__)
+
 
 class SQLAlchemyEmployeeRepository(EmployeeRepository):
     def __init__(self, session: AsyncSession):
@@ -20,10 +22,31 @@ class SQLAlchemyEmployeeRepository(EmployeeRepository):
         self.event_dispatcher = get_event_dispatcher()
 
     async def _dispatch_events(self, employee: Employee) -> None:
+        """
+        Dispatch all domain events for the employee.
+        Errors are logged but don't prevent the operation from succeeding.
+        """
         events = employee.get_domain_events()
-        for event in events:
-            asyncio.create_task(self.event_dispatcher.dispatch(event))
-        employee.clear_domain_events()
+        if not events:
+            return
+
+        try:
+            # Dispatch all events sequentially to ensure they propagate
+            for event in events:
+                try:
+                    await self.event_dispatcher.dispatch(event)
+                    logger.debug(f"Successfully dispatched event: {event.__class__.__name__}")
+                except Exception as e:
+                    # Log the error with context but don't fail the entire operation
+                    logger.error(
+                        f"Failed to dispatch event {event.__class__.__name__} "
+                        f"for employee {employee.id}: {e}",
+                        exc_info=True,
+                    )
+                    # In production, you might want to queue failed events for retry
+        finally:
+            # Always clear events even if dispatch fails to avoid re-dispatch
+            employee.clear_domain_events()
 
     def _to_domain(self, orm: EmployeeORM) -> Employee:
         statuses = [
@@ -72,13 +95,18 @@ class SQLAlchemyEmployeeRepository(EmployeeRepository):
         return orm
 
     async def add(self, employee: Employee) -> Employee:
+        """
+        Add an employee to the database.
+        Note: Domain events are NOT dispatched here - they must be dispatched
+        by the caller after the transaction is committed to avoid publishing
+        events for changes that might be rolled back.
+        """
         orm = self._to_orm(employee)
         self.session.add(orm)
         await self.session.flush()
         await self.session.refresh(orm, ["statuses"])
-        result = self._to_domain(orm)
-        await self._dispatch_events(employee)
-        return result
+        # Return the original employee with events intact
+        return employee
 
     async def get_by_id(self, employee_id: UUID) -> Optional[Employee]:
         stmt = (
@@ -147,17 +175,10 @@ class SQLAlchemyEmployeeRepository(EmployeeRepository):
 
         await self.session.flush()
 
-        stmt = (
-            select(EmployeeORM)
-            .options(selectinload(EmployeeORM.statuses))
-            .where(EmployeeORM.id == employee.id)
-        )
-        result = await self.session.execute(stmt)
-        orm = result.scalar_one_or_none()
-
-        domain_result = self._to_domain(orm)
-        await self._dispatch_events(employee)
-        return domain_result
+        # Return the original employee with events intact
+        # Note: Domain events are NOT dispatched here - they must be dispatched
+        # by the caller after the transaction is committed
+        return employee
 
     async def delete(self, employee_id: UUID) -> bool:
         stmt = select(EmployeeORM).where(EmployeeORM.id == employee_id)

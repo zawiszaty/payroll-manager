@@ -68,8 +68,12 @@ class UpdateEmployeeHandler:
             new_values["phone"] = command.phone
 
         if command.date_of_birth is not None and command.date_of_birth != employee.date_of_birth:
-            old_values["date_of_birth"] = str(employee.date_of_birth)
-            new_values["date_of_birth"] = str(command.date_of_birth)
+            old_values["date_of_birth"] = (
+                employee.date_of_birth.isoformat() if employee.date_of_birth else None
+            )
+            new_values["date_of_birth"] = (
+                command.date_of_birth.isoformat() if command.date_of_birth else None
+            )
 
         updated_employee = Employee(
             id=employee.id,

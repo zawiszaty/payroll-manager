@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from uuid import UUID
 
@@ -33,6 +34,8 @@ from app.modules.reporting.presentation.schemas import (
     ReportResponse,
 )
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
 
 
@@ -57,6 +60,22 @@ async def create_report(
     try:
         report = await handler.handle(command)
         await db.commit()
+
+        # Dispatch events AFTER successful commit
+        from app.shared.domain.events import get_event_dispatcher
+
+        dispatcher = get_event_dispatcher()
+        events = report.get_domain_events()
+        for event in events:
+            try:
+                await dispatcher.dispatch(event)
+            except Exception as dispatch_error:
+                # Log but don't fail the request - event dispatch is async
+                logger.error(
+                    f"Failed to dispatch event {event.__class__.__name__}: {dispatch_error}"
+                )
+        report.clear_domain_events()
+
         return ReportResponse.from_entity(report)
     except ValueError as e:
         await db.rollback()
