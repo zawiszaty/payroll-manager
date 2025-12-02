@@ -7,6 +7,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.modules.auth.infrastructure.dependencies import get_current_active_user
 from app.modules.reporting.application.commands import (
     CreateReportCommand,
     DeleteReportCommand,
@@ -36,7 +37,7 @@ from app.modules.reporting.presentation.schemas import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
 
 @router.post("/", response_model=ReportResponse, status_code=status.HTTP_201_CREATED)

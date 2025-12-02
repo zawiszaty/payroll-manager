@@ -23,8 +23,9 @@ from app.modules.audit.application.queries import (
 from app.modules.audit.domain.value_objects import AuditAction, EntityType
 from app.modules.audit.infrastructure.repository import SQLAlchemyAuditLogRepository
 from app.modules.audit.presentation.views import AuditLogListResponse, AuditLogResponse
+from app.modules.auth.infrastructure.dependencies import get_current_active_user
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
 
 @router.get("/", response_model=AuditLogListResponse)

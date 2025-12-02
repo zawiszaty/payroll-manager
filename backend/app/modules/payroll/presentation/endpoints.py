@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.modules.auth.infrastructure.dependencies import get_current_active_user
 from app.modules.payroll.application.commands import (
     ApprovePayrollCommand,
     CalculatePayrollCommand,
@@ -39,7 +40,7 @@ from app.modules.payroll.infrastructure.repository import SQLAlchemyPayrollRepos
 from app.modules.payroll.presentation.views import PayrollDetailView, PayrollListView
 from app.shared.infrastructure.pagination import PaginatedResponse, create_paginated_response
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
 
 class CreatePayrollRequest(BaseModel):

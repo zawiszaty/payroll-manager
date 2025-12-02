@@ -231,14 +231,24 @@ BACKEND_CORS_ORIGINS=["http://localhost:3000"]
 
 ## Testing
 
-The project maintains 100% test coverage on all implemented modules:
+The project maintains comprehensive test coverage across all modules with **212 tests, 100% passing**.
 
-- **Employee Module**: 11 tests (5 domain + 6 API)
-- **Contract Module**: 14 tests (8 domain + 6 API)
-- **Compensation Module**: 19 tests (10 domain + 9 API)
-- **Absence Module**: 29 tests (15 domain + 14 API)
+### Test Database Configuration
 
-**Total: 73 tests, 100% passing**
+Tests use environment variables for database configuration. The following variables can be set to customize the test database connection:
+
+```env
+# Test Database Configuration (optional - defaults provided)
+TEST_DB_USER=payroll_user          # Database user (default: payroll_user)
+TEST_DB_PASSWORD=payroll_pass      # Database password (default: payroll_pass)
+TEST_DB_HOST=postgres              # Database host (default: postgres)
+TEST_DB_PORT=5432                  # Database port (default: 5432)
+TEST_DB_NAME=payroll_db_test       # Test database name (default: payroll_db_test)
+```
+
+**Note**: The default values work for the Docker Compose environment. Override these variables in CI/CD pipelines or different environments as needed.
+
+If required variables are missing and no defaults can be used, tests will fail fast with a clear error message indicating which environment variables need to be set.
 
 ## Coding Standards
 

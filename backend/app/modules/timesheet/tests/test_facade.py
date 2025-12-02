@@ -17,8 +17,8 @@ from app.modules.timesheet.infrastructure.repository import (
 
 
 @pytest.mark.asyncio
-async def test_get_timesheet(db_session: AsyncSession):
-    repository = SQLAlchemyTimesheetRepository(db_session)
+async def test_get_timesheet(test_session: AsyncSession):
+    repository = SQLAlchemyTimesheetRepository(test_session)
     facade = TimesheetFacade(repository)
 
     employee_id = uuid4()
@@ -30,7 +30,7 @@ async def test_get_timesheet(db_session: AsyncSession):
         status=TimesheetStatus.DRAFT,
     )
     saved = await repository.save(timesheet)
-    await db_session.commit()
+    await test_session.commit()
 
     dto = await facade.get_timesheet(saved.id)
 
@@ -42,8 +42,8 @@ async def test_get_timesheet(db_session: AsyncSession):
 
 
 @pytest.mark.asyncio
-async def test_get_timesheet_not_found(db_session: AsyncSession):
-    repository = SQLAlchemyTimesheetRepository(db_session)
+async def test_get_timesheet_not_found(test_session: AsyncSession):
+    repository = SQLAlchemyTimesheetRepository(test_session)
     facade = TimesheetFacade(repository)
 
     dto = await facade.get_timesheet(uuid4())
@@ -52,8 +52,8 @@ async def test_get_timesheet_not_found(db_session: AsyncSession):
 
 
 @pytest.mark.asyncio
-async def test_get_timesheets_by_employee(db_session: AsyncSession):
-    repository = SQLAlchemyTimesheetRepository(db_session)
+async def test_get_timesheets_by_employee(test_session: AsyncSession):
+    repository = SQLAlchemyTimesheetRepository(test_session)
     facade = TimesheetFacade(repository)
 
     employee_id = uuid4()
@@ -75,7 +75,7 @@ async def test_get_timesheets_by_employee(db_session: AsyncSession):
         status=TimesheetStatus.DRAFT,
     )
     await repository.save(timesheet2)
-    await db_session.commit()
+    await test_session.commit()
 
     dtos = await facade.get_timesheets_by_employee(employee_id)
 
@@ -84,8 +84,8 @@ async def test_get_timesheets_by_employee(db_session: AsyncSession):
 
 
 @pytest.mark.asyncio
-async def test_get_approved_timesheets_in_period(db_session: AsyncSession):
-    repository = SQLAlchemyTimesheetRepository(db_session)
+async def test_get_approved_timesheets_in_period(test_session: AsyncSession):
+    repository = SQLAlchemyTimesheetRepository(test_session)
     facade = TimesheetFacade(repository)
 
     employee_id = uuid4()
@@ -109,7 +109,7 @@ async def test_get_approved_timesheets_in_period(db_session: AsyncSession):
         status=TimesheetStatus.DRAFT,
     )
     await repository.save(timesheet2)
-    await db_session.commit()
+    await test_session.commit()
 
     dtos = await facade.get_approved_timesheets_in_period(
         employee_id, date(2024, 1, 15), date(2024, 1, 16)
@@ -120,8 +120,8 @@ async def test_get_approved_timesheets_in_period(db_session: AsyncSession):
 
 
 @pytest.mark.asyncio
-async def test_sum_hours_in_interval(db_session: AsyncSession):
-    repository = SQLAlchemyTimesheetRepository(db_session)
+async def test_sum_hours_in_interval(test_session: AsyncSession):
+    repository = SQLAlchemyTimesheetRepository(test_session)
     facade = TimesheetFacade(repository)
 
     employee_id = uuid4()
@@ -148,7 +148,7 @@ async def test_sum_hours_in_interval(db_session: AsyncSession):
     timesheet2.submit()
     timesheet2.approve(approver_id)
     await repository.save(timesheet2)
-    await db_session.commit()
+    await test_session.commit()
 
     total = await facade.sum_hours_in_interval(employee_id, date(2024, 1, 15), date(2024, 1, 16))
 
@@ -156,8 +156,8 @@ async def test_sum_hours_in_interval(db_session: AsyncSession):
 
 
 @pytest.mark.asyncio
-async def test_get_timesheet_summary(db_session: AsyncSession):
-    repository = SQLAlchemyTimesheetRepository(db_session)
+async def test_get_timesheet_summary(test_session: AsyncSession):
+    repository = SQLAlchemyTimesheetRepository(test_session)
     facade = TimesheetFacade(repository)
 
     employee_id = uuid4()
@@ -184,7 +184,7 @@ async def test_get_timesheet_summary(db_session: AsyncSession):
     timesheet2.submit()
     timesheet2.approve(approver_id)
     await repository.save(timesheet2)
-    await db_session.commit()
+    await test_session.commit()
 
     summary = await facade.get_timesheet_summary(employee_id, date(2024, 1, 15), date(2024, 1, 16))
 
