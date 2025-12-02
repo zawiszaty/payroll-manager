@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from datetime import date
 from typing import List, Optional
 from uuid import UUID
 
@@ -32,4 +33,12 @@ class ContractRepository(ABC):
 
     @abstractmethod
     async def delete(self, contract_id: UUID) -> bool:
+        pass
+
+    @abstractmethod
+    async def get_expired_contracts(self, check_date: date) -> List[Contract]:
+        """
+        Get all ACTIVE contracts with valid_to <= check_date.
+        This query should be performed at the database level for scalability.
+        """
         pass

@@ -85,7 +85,7 @@ class ListRatesHandler:
         self.read_model = read_model
 
     async def handle(self, query: ListRatesQuery):
-        items, total_count = await self.read_model.list(skip=query.skip, limit=query.limit)
+        items, total_count = await self.read_model.list(page=query.page, limit=query.limit)
         return items, total_count
 
 
@@ -127,7 +127,7 @@ class ListBonusesHandler:
         self.read_model = read_model
 
     async def handle(self, query: ListBonusesQuery):
-        items, total_count = await self.read_model.list(skip=query.skip, limit=query.limit)
+        items, total_count = await self.read_model.list(page=query.page, limit=query.limit)
         return items, total_count
 
 

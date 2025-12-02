@@ -94,17 +94,55 @@ class SQLAlchemyEmployeeRepository(EmployeeRepository):
 
         return orm
 
-    async def add(self, employee: Employee) -> Employee:
+    async def save(self, employee: Employee) -> Employee:
         """
-        Add an employee to the database.
+        Save an employee to the database (add or update).
         Note: Domain events are NOT dispatched here - they must be dispatched
         by the caller after the transaction is committed to avoid publishing
         events for changes that might be rolled back.
         """
-        orm = self._to_orm(employee)
-        self.session.add(orm)
-        await self.session.flush()
-        await self.session.refresh(orm, ["statuses"])
+        from sqlalchemy import delete as sql_delete
+
+        # Check if employee exists
+        stmt = select(EmployeeORM).where(EmployeeORM.id == employee.id)
+        result = await self.session.execute(stmt)
+        existing_orm = result.scalar_one_or_none()
+
+        if existing_orm:
+            # Update existing employee
+            existing_orm.first_name = employee.first_name
+            existing_orm.last_name = employee.last_name
+            existing_orm.email = employee.email
+            existing_orm.phone = employee.phone
+            existing_orm.date_of_birth = employee.date_of_birth
+            existing_orm.hire_date = employee.hire_date
+
+            await self.session.flush()
+
+            # Delete and recreate statuses
+            delete_stmt = sql_delete(EmploymentStatusORM).where(
+                EmploymentStatusORM.employee_id == employee.id
+            )
+            await self.session.execute(delete_stmt)
+
+            for status in employee.statuses:
+                status_orm = EmploymentStatusORM(
+                    employee_id=employee.id,
+                    status_type=status.status_type,
+                    valid_from=status.date_range.valid_from,
+                    valid_to=status.date_range.valid_to,
+                    reason=status.reason,
+                )
+                self.session.add(status_orm)
+
+            await self.session.flush()
+        else:
+            # Add new employee
+            orm = self._to_orm(employee)
+            self.session.add(orm)
+            await self.session.flush()
+            await self.session.refresh(orm, ["statuses"])
+
         # Return the original employee with events intact
         return employee
 
@@ -128,7 +166,8 @@ class SQLAlchemyEmployeeRepository(EmployeeRepository):
         orm = result.scalar_one_or_none()
         return self._to_domain(orm) if orm else None
 
-    async def list(self, skip: int = 0, limit: int = 100) -> List[Employee]:
+    async def list(self, page: int = 1, limit: int = 100) -> List[Employee]:
+        skip = (page - 1) * limit
         stmt = (
             select(EmployeeORM)
             .options(selectinload(EmployeeORM.statuses))
@@ -138,47 +177,6 @@ class SQLAlchemyEmployeeRepository(EmployeeRepository):
         result = await self.session.execute(stmt)
         orms = result.scalars().all()
         return [self._to_domain(orm) for orm in orms]
-
-    async def update(self, employee: Employee) -> Employee:
-        from sqlalchemy import delete as sql_delete
-
-        stmt = select(EmployeeORM).where(EmployeeORM.id == employee.id)
-        result = await self.session.execute(stmt)
-        orm = result.scalar_one_or_none()
-
-        if not orm:
-            raise ValueError(f"Employee {employee.id} not found")
-
-        orm.first_name = employee.first_name
-        orm.last_name = employee.last_name
-        orm.email = employee.email
-        orm.phone = employee.phone
-        orm.date_of_birth = employee.date_of_birth
-        orm.hire_date = employee.hire_date
-
-        await self.session.flush()
-
-        delete_stmt = sql_delete(EmploymentStatusORM).where(
-            EmploymentStatusORM.employee_id == employee.id
-        )
-        await self.session.execute(delete_stmt)
-
-        for status in employee.statuses:
-            status_orm = EmploymentStatusORM(
-                employee_id=employee.id,
-                status_type=status.status_type,
-                valid_from=status.date_range.valid_from,
-                valid_to=status.date_range.valid_to,
-                reason=status.reason,
-            )
-            self.session.add(status_orm)
-
-        await self.session.flush()
-
-        # Return the original employee with events intact
-        # Note: Domain events are NOT dispatched here - they must be dispatched
-        # by the caller after the transaction is committed
-        return employee
 
     async def delete(self, employee_id: UUID) -> bool:
         stmt = select(EmployeeORM).where(EmployeeORM.id == employee_id)

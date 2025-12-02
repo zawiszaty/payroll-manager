@@ -23,7 +23,7 @@ class ListAuditLogsHandler:
 
     async def handle(self, query: ListAuditLogsQuery) -> list[AuditLog]:
         return await self.repository.list_all(
-            skip=query.skip, limit=query.limit, entity_type=query.entity_type, action=query.action
+            page=query.page, limit=query.limit, entity_type=query.entity_type, action=query.action
         )
 
 
@@ -35,7 +35,7 @@ class GetAuditLogsByEntityHandler:
         return await self.repository.get_by_entity(
             entity_type=query.entity_type,
             entity_id=query.entity_id,
-            skip=query.skip,
+            page=query.page,
             limit=query.limit,
         )
 
@@ -46,7 +46,7 @@ class GetAuditLogsByEmployeeHandler:
 
     async def handle(self, query: GetAuditLogsByEmployeeQuery) -> list[AuditLog]:
         return await self.repository.get_by_employee(
-            employee_id=query.employee_id, skip=query.skip, limit=query.limit
+            employee_id=query.employee_id, page=query.page, limit=query.limit
         )
 
 
@@ -56,7 +56,7 @@ class GetAuditTimelineHandler:
 
     async def handle(self, query: GetAuditTimelineQuery) -> list[AuditLog]:
         return await self.repository.get_timeline(
-            skip=query.skip,
+            page=query.page,
             limit=query.limit,
             entity_type=query.entity_type,
             employee_id=query.employee_id,

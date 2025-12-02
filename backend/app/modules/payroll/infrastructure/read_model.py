@@ -64,7 +64,8 @@ class PayrollReadModel:
             updated_at=orm.updated_at.date() if orm.updated_at else None,
         )
 
-    async def list(self, skip: int = 0, limit: int = 100) -> Tuple[List[PayrollListView], int]:
+    async def list(self, page: int = 1, limit: int = 100) -> Tuple[List[PayrollListView], int]:
+        skip = (page - 1) * limit
         # Get total count
         count_stmt = select(func.count()).select_from(PayrollORM)
         count_result = await self.session.execute(count_stmt)
@@ -94,8 +95,9 @@ class PayrollReadModel:
         return items, total_count
 
     async def list_by_employee(
-        self, employee_id: UUID, skip: int = 0, limit: int = 100
+        self, employee_id: UUID, page: int = 1, limit: int = 100
     ) -> Tuple[List[PayrollListView], int]:
+        skip = (page - 1) * limit
         # Get total count for this employee
         count_stmt = (
             select(func.count())

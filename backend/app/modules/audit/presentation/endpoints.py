@@ -30,7 +30,7 @@ router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
 @router.get("/", response_model=AuditLogListResponse)
 async def list_audit_logs(
-    skip: int = Query(0, ge=0),
+    page: int = Query(1, ge=1),
     limit: int = Query(100, ge=1, le=1000),
     entity_type: Optional[str] = None,
     action: Optional[str] = None,
@@ -53,14 +53,14 @@ async def list_audit_logs(
     repository = SQLAlchemyAuditLogRepository(db)
     handler = ListAuditLogsHandler(repository)
     query = ListAuditLogsQuery(
-        skip=skip, limit=limit, entity_type=entity_type_enum, action=action_enum
+        page=page, limit=limit, entity_type=entity_type_enum, action=action_enum
     )
     audit_logs = await handler.handle(query)
 
     return AuditLogListResponse(
         items=[AuditLogResponse.from_domain(log) for log in audit_logs],
         total=len(audit_logs),
-        skip=skip,
+        page=page,
         limit=limit,
     )
 
@@ -69,7 +69,7 @@ async def list_audit_logs(
 async def get_audit_logs_by_entity(
     entity_type: str,
     entity_id: UUID,
-    skip: int = Query(0, ge=0),
+    page: int = Query(1, ge=1),
     limit: int = Query(100, ge=1, le=1000),
     db: AsyncSession = Depends(get_db),
 ) -> AuditLogListResponse:
@@ -83,14 +83,14 @@ async def get_audit_logs_by_entity(
     repository = SQLAlchemyAuditLogRepository(db)
     handler = GetAuditLogsByEntityHandler(repository)
     query = GetAuditLogsByEntityQuery(
-        entity_type=entity_type_enum, entity_id=entity_id, skip=skip, limit=limit
+        entity_type=entity_type_enum, entity_id=entity_id, page=page, limit=limit
     )
     audit_logs = await handler.handle(query)
 
     return AuditLogListResponse(
         items=[AuditLogResponse.from_domain(log) for log in audit_logs],
         total=len(audit_logs),
-        skip=skip,
+        page=page,
         limit=limit,
     )
 
@@ -98,26 +98,26 @@ async def get_audit_logs_by_entity(
 @router.get("/employee/{employee_id}", response_model=AuditLogListResponse)
 async def get_audit_logs_by_employee(
     employee_id: UUID,
-    skip: int = Query(0, ge=0),
+    page: int = Query(1, ge=1),
     limit: int = Query(100, ge=1, le=1000),
     db: AsyncSession = Depends(get_db),
 ) -> AuditLogListResponse:
     repository = SQLAlchemyAuditLogRepository(db)
     handler = GetAuditLogsByEmployeeHandler(repository)
-    query = GetAuditLogsByEmployeeQuery(employee_id=employee_id, skip=skip, limit=limit)
+    query = GetAuditLogsByEmployeeQuery(employee_id=employee_id, page=page, limit=limit)
     audit_logs = await handler.handle(query)
 
     return AuditLogListResponse(
         items=[AuditLogResponse.from_domain(log) for log in audit_logs],
         total=len(audit_logs),
-        skip=skip,
+        page=page,
         limit=limit,
     )
 
 
 @router.get("/timeline", response_model=AuditLogListResponse)
 async def get_audit_timeline(
-    skip: int = Query(0, ge=0),
+    page: int = Query(1, ge=1),
     limit: int = Query(100, ge=1, le=1000),
     entity_type: Optional[str] = None,
     employee_id: Optional[UUID] = None,
@@ -135,7 +135,7 @@ async def get_audit_timeline(
     repository = SQLAlchemyAuditLogRepository(db)
     handler = GetAuditTimelineHandler(repository)
     query = GetAuditTimelineQuery(
-        skip=skip,
+        page=page,
         limit=limit,
         entity_type=entity_type_enum,
         employee_id=employee_id,
@@ -147,7 +147,7 @@ async def get_audit_timeline(
     return AuditLogListResponse(
         items=[AuditLogResponse.from_domain(log) for log in audit_logs],
         total=len(audit_logs),
-        skip=skip,
+        page=page,
         limit=limit,
     )
 

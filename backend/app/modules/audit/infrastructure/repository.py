@@ -59,11 +59,12 @@ class SQLAlchemyAuditLogRepository(AuditLogRepository):
 
     async def list_all(
         self,
-        skip: int = 0,
+        page: int = 1,
         limit: int = 100,
         entity_type: EntityType | None = None,
         action: AuditAction | None = None,
     ) -> list[AuditLog]:
+        skip = (page - 1) * limit
         stmt = (
             select(AuditLogORM).order_by(AuditLogORM.occurred_at.desc()).offset(skip).limit(limit)
         )
@@ -78,8 +79,9 @@ class SQLAlchemyAuditLogRepository(AuditLogRepository):
         return [self._to_domain(orm) for orm in orms]
 
     async def get_by_entity(
-        self, entity_type: EntityType, entity_id: UUID, skip: int = 0, limit: int = 100
+        self, entity_type: EntityType, entity_id: UUID, page: int = 1, limit: int = 100
     ) -> list[AuditLog]:
+        skip = (page - 1) * limit
         stmt = (
             select(AuditLogORM)
             .where(AuditLogORM.entity_type == entity_type, AuditLogORM.entity_id == entity_id)
@@ -92,8 +94,9 @@ class SQLAlchemyAuditLogRepository(AuditLogRepository):
         return [self._to_domain(orm) for orm in orms]
 
     async def get_by_employee(
-        self, employee_id: UUID, skip: int = 0, limit: int = 100
+        self, employee_id: UUID, page: int = 1, limit: int = 100
     ) -> list[AuditLog]:
+        skip = (page - 1) * limit
         stmt = (
             select(AuditLogORM)
             .where(AuditLogORM.employee_id == employee_id)
@@ -107,13 +110,14 @@ class SQLAlchemyAuditLogRepository(AuditLogRepository):
 
     async def get_timeline(
         self,
-        skip: int = 0,
+        page: int = 1,
         limit: int = 100,
         entity_type: EntityType | None = None,
         employee_id: UUID | None = None,
         date_from: datetime | None = None,
         date_to: datetime | None = None,
     ) -> list[AuditLog]:
+        skip = (page - 1) * limit
         stmt = (
             select(AuditLogORM).order_by(AuditLogORM.occurred_at.desc()).offset(skip).limit(limit)
         )

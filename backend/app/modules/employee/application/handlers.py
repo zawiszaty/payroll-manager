@@ -1,3 +1,4 @@
+from datetime import timedelta
 from typing import Optional
 
 from app.modules.employee.application.commands import (
@@ -10,24 +11,29 @@ from app.modules.employee.application.queries import (
     GetEmployeeQuery,
     ListEmployeesQuery,
 )
-from app.modules.employee.domain.events import EmployeeUpdatedEvent
+from app.modules.employee.domain.events import (
+    EmployeeCreatedEvent,
+    EmployeeStatusChangedEvent,
+    EmployeeUpdatedEvent,
+)
 from app.modules.employee.domain.models import Employee
 from app.modules.employee.domain.repository import EmployeeRepository
-from app.modules.employee.domain.services import ChangeEmployeeStatusService, CreateEmployeeService
+from app.modules.employee.domain.value_objects import EmploymentStatus, EmploymentStatusType
 from app.modules.employee.infrastructure.read_model import EmployeeReadModel
+from app.shared.domain.value_objects import DateRange
 
 
 class CreateEmployeeHandler:
     def __init__(self, repository: EmployeeRepository):
         self.repository = repository
-        self.service = CreateEmployeeService()
 
     async def handle(self, command: CreateEmployeeCommand) -> Employee:
         existing = await self.repository.get_by_email(command.email)
         if existing:
             raise ValueError(f"Employee with email {command.email} already exists")
 
-        employee = self.service.create(
+        # Create employee
+        employee = Employee(
             first_name=command.first_name,
             last_name=command.last_name,
             email=command.email,
@@ -36,7 +42,25 @@ class CreateEmployeeHandler:
             date_of_birth=command.date_of_birth,
         )
 
-        return await self.repository.add(employee)
+        # Add initial ACTIVE status starting from hire date
+        initial_status = EmploymentStatus(
+            status_type=EmploymentStatusType.ACTIVE,
+            date_range=DateRange(valid_from=command.hire_date),
+        )
+        employee.add_status(initial_status)
+
+        # Add domain event
+        employee._add_domain_event(
+            EmployeeCreatedEvent(
+                employee_id=employee.id,
+                first_name=employee.first_name,
+                last_name=employee.last_name,
+                email=employee.email,
+                hire_date=employee.hire_date,
+            )
+        )
+
+        return await self.repository.save(employee)
 
 
 class UpdateEmployeeHandler:
@@ -99,27 +123,64 @@ class UpdateEmployeeHandler:
                 )
             )
 
-        return await self.repository.update(updated_employee)
+        return await self.repository.save(updated_employee)
 
 
 class ChangeEmployeeStatusHandler:
     def __init__(self, repository: EmployeeRepository):
         self.repository = repository
-        self.service = ChangeEmployeeStatusService()
 
     async def handle(self, command: ChangeEmployeeStatusCommand) -> Employee:
         employee = await self.repository.get_by_id(command.employee_id)
         if not employee:
             raise ValueError(f"Employee {command.employee_id} not found")
 
-        employee = self.service.change_status(
-            employee=employee,
-            new_status_type=command.new_status,
-            effective_date=command.effective_date,
+        # Get current status at the day before effective_date
+        # This ensures we close the correct status that's active just before the new one starts
+        lookup_date = command.effective_date - timedelta(days=1)
+        current_status = employee.get_status_at(lookup_date)
+        old_status_value = current_status.status_type.value if current_status else None
+
+        # Close current status (set valid_to to day before effective_date)
+        if current_status:
+            closed_status = EmploymentStatus(
+                status_type=current_status.status_type,
+                date_range=DateRange(
+                    valid_from=current_status.date_range.valid_from,
+                    valid_to=command.effective_date - timedelta(days=1),
+                ),
+                reason=current_status.reason,
+            )
+            # Replace the open-ended status with the closed one
+            employee.statuses = [
+                s
+                for s in employee.statuses
+                if s.date_range.valid_from != current_status.date_range.valid_from
+            ]
+            employee.statuses.append(closed_status)
+
+        # Add new status starting from effective_date
+        new_status = EmploymentStatus(
+            status_type=command.new_status,
+            date_range=DateRange(valid_from=command.effective_date),
             reason=command.reason,
         )
+        employee.add_status(new_status)
 
-        return await self.repository.update(employee)
+        # Add domain event
+        if old_status_value:
+            employee._add_domain_event(
+                EmployeeStatusChangedEvent(
+                    employee_id=employee.id,
+                    old_status=old_status_value,
+                    new_status=command.new_status.value,
+                    status_valid_from=command.effective_date,
+                    status_valid_to=new_status.date_range.valid_to,
+                    reason=command.reason,
+                )
+            )
+
+        return await self.repository.save(employee)
 
 
 class GetEmployeeHandler:
@@ -135,7 +196,7 @@ class ListEmployeesHandler:
         self.read_model = read_model
 
     async def handle(self, query: ListEmployeesQuery):
-        items, total_count = await self.read_model.list(skip=query.skip, limit=query.limit)
+        items, total_count = await self.read_model.list(page=query.page, limit=query.limit)
         return items, total_count
 
 

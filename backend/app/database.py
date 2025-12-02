@@ -29,3 +29,13 @@ async def get_db() -> AsyncSession:
             yield session
         finally:
             await session.close()
+
+
+def get_db_session():
+    """
+    Get a database session as a context manager.
+    Usage:
+        async with get_db_session() as session:
+            # use session
+    """
+    return AsyncSessionLocal()

@@ -7,7 +7,7 @@ from app.modules.employee.domain.models import Employee
 
 class EmployeeRepository(ABC):
     @abstractmethod
-    async def add(self, employee: Employee) -> Employee:
+    async def save(self, employee: Employee) -> Employee:
         pass
 
     @abstractmethod
@@ -19,11 +19,7 @@ class EmployeeRepository(ABC):
         pass
 
     @abstractmethod
-    async def list(self, skip: int = 0, limit: int = 100) -> List[Employee]:
-        pass
-
-    @abstractmethod
-    async def update(self, employee: Employee) -> Employee:
+    async def list(self, page: int = 1, limit: int = 100) -> List[Employee]:
         pass
 
     @abstractmethod

@@ -143,7 +143,7 @@ class ListPayrollsHandler:
         self.read_model = read_model
 
     async def handle(self, query: ListPayrollsQuery):
-        items, total_count = await self.read_model.list(skip=query.skip, limit=query.limit)
+        items, total_count = await self.read_model.list(page=query.page, limit=query.limit)
         return items, total_count
 
 
@@ -153,6 +153,6 @@ class ListPayrollsByEmployeeHandler:
 
     async def handle(self, query: ListPayrollsByEmployeeQuery):
         items, total_count = await self.read_model.list_by_employee(
-            query.employee_id, skip=query.skip, limit=query.limit
+            query.employee_id, page=query.page, limit=query.limit
         )
         return items, total_count

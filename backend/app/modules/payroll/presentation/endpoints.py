@@ -117,12 +117,10 @@ async def list_payrolls(
     if limit < 1 or limit > 100:
         raise HTTPException(status_code=400, detail="Limit must be between 1 and 100")
 
-    skip = (page - 1) * limit
-
     read_model = PayrollReadModel(db)
     handler = ListPayrollsHandler(read_model)
 
-    query = ListPayrollsQuery(skip=skip, limit=limit)
+    query = ListPayrollsQuery(page=page, limit=limit)
     items, total_count = await handler.handle(query)
 
     base_url = str(request.url).split("?")[0]
@@ -148,12 +146,10 @@ async def list_payrolls_by_employee(
     if limit < 1 or limit > 100:
         raise HTTPException(status_code=400, detail="Limit must be between 1 and 100")
 
-    skip = (page - 1) * limit
-
     read_model = PayrollReadModel(db)
     handler = ListPayrollsByEmployeeHandler(read_model)
 
-    query = ListPayrollsByEmployeeQuery(employee_id=employee_id, skip=skip, limit=limit)
+    query = ListPayrollsByEmployeeQuery(employee_id=employee_id, page=page, limit=limit)
     items, total_count = await handler.handle(query)
 
     base_url = str(request.url).split("?")[0]
