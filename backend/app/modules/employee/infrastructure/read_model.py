@@ -90,7 +90,8 @@ class EmployeeReadModel:
             for orm in orms
         }
 
-    async def list(self, skip: int = 0, limit: int = 100) -> Tuple[List[EmployeeListView], int]:
+    async def list(self, page: int = 1, limit: int = 100) -> Tuple[List[EmployeeListView], int]:
+        skip = (page - 1) * limit
         # Get total count
         count_stmt = select(func.count()).select_from(EmployeeORM)
         count_result = await self.session.execute(count_stmt)

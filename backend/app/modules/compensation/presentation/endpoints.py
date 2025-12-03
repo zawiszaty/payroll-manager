@@ -118,12 +118,10 @@ async def list_rates(
     if limit < 1 or limit > 100:
         raise HTTPException(status_code=400, detail="Limit must be between 1 and 100")
 
-    skip = (page - 1) * limit
-
     read_model = RateReadModel(db)
     handler = ListRatesHandler(read_model)
 
-    query = ListRatesQuery(skip=skip, limit=limit)
+    query = ListRatesQuery(page=page, limit=limit)
     items, total_count = await handler.handle(query)
 
     base_url = str(request.url).split("?")[0]
@@ -215,12 +213,10 @@ async def list_bonuses(
     if limit < 1 or limit > 100:
         raise HTTPException(status_code=400, detail="Limit must be between 1 and 100")
 
-    skip = (page - 1) * limit
-
     read_model = BonusReadModel(db)
     handler = ListBonusesHandler(read_model)
 
-    query = ListBonusesQuery(skip=skip, limit=limit)
+    query = ListBonusesQuery(page=page, limit=limit)
     items, total_count = await handler.handle(query)
 
     base_url = str(request.url).split("?")[0]

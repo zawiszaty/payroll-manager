@@ -39,5 +39,5 @@ class AuditLogResponse(BaseModel):
 class AuditLogListResponse(BaseModel):
     items: list[AuditLogResponse]
     total: int
-    skip: int
+    page: int
     limit: int

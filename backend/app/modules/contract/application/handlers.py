@@ -39,7 +39,7 @@ class CreateContractHandler:
             description=command.description,
         )
 
-        return await self.repository.add(contract)
+        return await self.repository.save(contract)
 
 
 class ActivateContractHandler:
@@ -53,7 +53,7 @@ class ActivateContractHandler:
             raise ValueError(f"Contract {command.contract_id} not found")
 
         contract = self.service.activate(contract)
-        return await self.repository.update(contract)
+        return await self.repository.save(contract)
 
 
 class CancelContractHandler:
@@ -67,7 +67,7 @@ class CancelContractHandler:
             raise ValueError(f"Contract {command.contract_id} not found")
 
         contract = self.service.cancel(contract, command.reason)
-        return await self.repository.update(contract)
+        return await self.repository.save(contract)
 
 
 class ExpireContractHandler:
@@ -81,7 +81,7 @@ class ExpireContractHandler:
             raise ValueError(f"Contract {command.contract_id} not found")
 
         contract = self.service.expire(contract)
-        return await self.repository.update(contract)
+        return await self.repository.save(contract)
 
 
 class GetContractHandler:

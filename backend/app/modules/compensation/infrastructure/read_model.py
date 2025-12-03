@@ -34,7 +34,8 @@ class RateReadModel:
             updated_at=orm.updated_at.date() if orm.updated_at else None,
         )
 
-    async def list(self, skip: int = 0, limit: int = 100) -> Tuple[List[RateView], int]:
+    async def list(self, page: int = 1, limit: int = 100) -> Tuple[List[RateView], int]:
+        skip = (page - 1) * limit
         # Get total count
         count_stmt = select(func.count()).select_from(RateORM)
         count_result = await self.session.execute(count_stmt)
@@ -140,7 +141,8 @@ class BonusReadModel:
             updated_at=None,
         )
 
-    async def list(self, skip: int = 0, limit: int = 100) -> Tuple[List[BonusView], int]:
+    async def list(self, page: int = 1, limit: int = 100) -> Tuple[List[BonusView], int]:
+        skip = (page - 1) * limit
         # Get total count
         count_stmt = select(func.count()).select_from(BonusORM)
         count_result = await self.session.execute(count_stmt)

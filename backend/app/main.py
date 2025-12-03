@@ -16,16 +16,9 @@ async def lifespan(app: FastAPI):
     logger = logging.getLogger(__name__)
     logger.info("Starting application lifespan...")
 
-    from app.shared.infrastructure.rabbitmq import get_rabbitmq_publisher
-
-    publisher = get_rabbitmq_publisher()
-    await publisher.connect()
-    logger.info("RabbitMQ publisher initialized")
-
     yield
 
     logger.info("Shutting down application...")
-    await publisher.close()
 
 
 settings = get_settings()

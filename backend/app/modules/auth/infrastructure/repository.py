@@ -12,12 +12,13 @@ class SqlAlchemyUserRepository(UserRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create(self, user: User) -> User:
+    async def save(self, user: User) -> User:
+        """Save a user to the database (add or update)."""
         user_model = UserModel.from_domain(user)
-        self.session.add(user_model)
+        merged_model = await self.session.merge(user_model)
         await self.session.flush()
-        await self.session.refresh(user_model)
-        return user_model.to_domain()
+        await self.session.refresh(merged_model)
+        return merged_model.to_domain()
 
     async def get_by_id(self, user_id: UUID) -> User | None:
         result = await self.session.execute(select(UserModel).where(UserModel.id == user_id))
@@ -28,25 +29,6 @@ class SqlAlchemyUserRepository(UserRepository):
         result = await self.session.execute(select(UserModel).where(UserModel.email == email))
         user_model = result.scalar_one_or_none()
         return user_model.to_domain() if user_model else None
-
-    async def update(self, user: User) -> User:
-        result = await self.session.execute(select(UserModel).where(UserModel.id == user.id))
-        user_model = result.scalar_one_or_none()
-        if not user_model:
-            raise ValueError(f"User with id {user.id} not found")
-
-        user_model.email = user.email
-        user_model.hashed_password = user.hashed_password
-        user_model.role = user.role
-        user_model.status = user.status
-        user_model.full_name = user.full_name
-        user_model.refresh_token = user.refresh_token
-        user_model.refresh_token_expires_at = user.refresh_token_expires_at
-        user_model.updated_at = user.updated_at
-
-        await self.session.flush()
-        await self.session.refresh(user_model)
-        return user_model.to_domain()
 
     async def list_all(self) -> list[User]:
         result = await self.session.execute(select(UserModel))

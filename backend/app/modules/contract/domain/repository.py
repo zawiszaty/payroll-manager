@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from datetime import date
 from typing import List, Optional
 from uuid import UUID
 
@@ -7,7 +8,7 @@ from app.modules.contract.domain.models import Contract
 
 class ContractRepository(ABC):
     @abstractmethod
-    async def add(self, contract: Contract) -> Contract:
+    async def save(self, contract: Contract) -> Contract:
         pass
 
     @abstractmethod
@@ -27,9 +28,14 @@ class ContractRepository(ABC):
         pass
 
     @abstractmethod
-    async def update(self, contract: Contract) -> Contract:
+    async def delete(self, contract_id: UUID) -> bool:
         pass
 
     @abstractmethod
-    async def delete(self, contract_id: UUID) -> bool:
+    async def get_expired_contracts(self, check_date: date) -> List[Contract]:
+        """
+        Get all ACTIVE contracts where valid_to < check_date.
+        A contract is expired when the check_date is after its last valid day.
+        This query should be performed at the database level for scalability.
+        """
         pass

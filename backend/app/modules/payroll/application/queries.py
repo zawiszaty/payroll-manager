@@ -9,12 +9,12 @@ class GetPayrollQuery:
 
 @dataclass
 class ListPayrollsQuery:
-    skip: int = 0
+    page: int = 1
     limit: int = 100
 
 
 @dataclass
 class ListPayrollsByEmployeeQuery:
     employee_id: UUID
-    skip: int = 0
+    page: int = 1
     limit: int = 100

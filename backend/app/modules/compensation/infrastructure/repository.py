@@ -52,12 +52,13 @@ class SQLAlchemyRateRepository(RateRepository):
             description=rate.description,
         )
 
-    async def add(self, rate: Rate) -> Rate:
+    async def save(self, rate: Rate) -> Rate:
+        """Save a rate to the database (add or update)."""
         orm = self._to_orm(rate)
-        self.session.add(orm)
+        merged_orm = await self.session.merge(orm)
         await self.session.flush()
-        await self.session.refresh(orm)
-        return self._to_domain(orm)
+        await self.session.refresh(merged_orm)
+        return self._to_domain(merged_orm)
 
     async def get_by_id(self, rate_id: UUID) -> Optional[Rate]:
         stmt = select(RateORM).where(RateORM.id == rate_id)
@@ -97,26 +98,6 @@ class SQLAlchemyRateRepository(RateRepository):
         orms = result.scalars().all()
         return [self._to_domain(orm) for orm in orms]
 
-    async def update(self, rate: Rate) -> Rate:
-        stmt = select(RateORM).where(RateORM.id == rate.id)
-        result = await self.session.execute(stmt)
-        orm = result.scalar_one_or_none()
-
-        if not orm:
-            raise ValueError(f"Rate {rate.id} not found")
-
-        orm.employee_id = rate.employee_id
-        orm.rate_type = rate.rate_type
-        orm.amount = rate.amount.amount
-        orm.currency = rate.amount.currency
-        orm.valid_from = rate.date_range.valid_from
-        orm.valid_to = rate.date_range.valid_to
-        orm.description = rate.description
-
-        await self.session.flush()
-        await self.session.refresh(orm)
-        return self._to_domain(orm)
-
     async def delete(self, rate_id: UUID) -> bool:
         stmt = select(RateORM).where(RateORM.id == rate_id)
         result = await self.session.execute(stmt)
@@ -155,12 +136,13 @@ class SQLAlchemyBonusRepository(BonusRepository):
             description=bonus.description,
         )
 
-    async def add(self, bonus: Bonus) -> Bonus:
+    async def save(self, bonus: Bonus) -> Bonus:
+        """Save a bonus to the database (add or update)."""
         orm = self._to_orm(bonus)
-        self.session.add(orm)
+        merged_orm = await self.session.merge(orm)
         await self.session.flush()
-        await self.session.refresh(orm)
-        return self._to_domain(orm)
+        await self.session.refresh(merged_orm)
+        return self._to_domain(merged_orm)
 
     async def get_by_id(self, bonus_id: UUID) -> Optional[Bonus]:
         stmt = select(BonusORM).where(BonusORM.id == bonus_id)
@@ -224,12 +206,13 @@ class SQLAlchemyDeductionRepository(DeductionRepository):
             description=deduction.description,
         )
 
-    async def add(self, deduction: Deduction) -> Deduction:
+    async def save(self, deduction: Deduction) -> Deduction:
+        """Save a deduction to the database (add or update)."""
         orm = self._to_orm(deduction)
-        self.session.add(orm)
+        merged_orm = await self.session.merge(orm)
         await self.session.flush()
-        await self.session.refresh(orm)
-        return self._to_domain(orm)
+        await self.session.refresh(merged_orm)
+        return self._to_domain(merged_orm)
 
     async def get_by_id(self, deduction_id: UUID) -> Optional[Deduction]:
         stmt = select(DeductionORM).where(DeductionORM.id == deduction_id)
@@ -271,26 +254,6 @@ class SQLAlchemyDeductionRepository(DeductionRepository):
         orms = result.scalars().all()
         return [self._to_domain(orm) for orm in orms]
 
-    async def update(self, deduction: Deduction) -> Deduction:
-        stmt = select(DeductionORM).where(DeductionORM.id == deduction.id)
-        result = await self.session.execute(stmt)
-        orm = result.scalar_one_or_none()
-
-        if not orm:
-            raise ValueError(f"Deduction {deduction.id} not found")
-
-        orm.employee_id = deduction.employee_id
-        orm.deduction_type = deduction.deduction_type
-        orm.amount = deduction.amount.amount
-        orm.currency = deduction.amount.currency
-        orm.valid_from = deduction.date_range.valid_from
-        orm.valid_to = deduction.date_range.valid_to
-        orm.description = deduction.description
-
-        await self.session.flush()
-        await self.session.refresh(orm)
-        return self._to_domain(orm)
-
     async def delete(self, deduction_id: UUID) -> bool:
         stmt = select(DeductionORM).where(DeductionORM.id == deduction_id)
         result = await self.session.execute(stmt)
@@ -331,12 +294,13 @@ class SQLAlchemyOvertimeRepository(OvertimeRepository):
             valid_to=overtime.rule.date_range.valid_to,
         )
 
-    async def add(self, overtime: Overtime) -> Overtime:
+    async def save(self, overtime: Overtime) -> Overtime:
+        """Save overtime to the database (add or update)."""
         orm = self._to_orm(overtime)
-        self.session.add(orm)
+        merged_orm = await self.session.merge(orm)
         await self.session.flush()
-        await self.session.refresh(orm)
-        return self._to_domain(orm)
+        await self.session.refresh(merged_orm)
+        return self._to_domain(merged_orm)
 
     async def get_by_id(self, overtime_id: UUID) -> Optional[Overtime]:
         stmt = select(OvertimeORM).where(OvertimeORM.id == overtime_id)
@@ -353,24 +317,6 @@ class SQLAlchemyOvertimeRepository(OvertimeRepository):
         result = await self.session.execute(stmt)
         orms = result.scalars().all()
         return [self._to_domain(orm) for orm in orms]
-
-    async def update(self, overtime: Overtime) -> Overtime:
-        stmt = select(OvertimeORM).where(OvertimeORM.id == overtime.id)
-        result = await self.session.execute(stmt)
-        orm = result.scalar_one_or_none()
-
-        if not orm:
-            raise ValueError(f"Overtime {overtime.id} not found")
-
-        orm.employee_id = overtime.employee_id
-        orm.multiplier = overtime.rule.multiplier
-        orm.threshold_hours = overtime.rule.threshold_hours
-        orm.valid_from = overtime.rule.date_range.valid_from
-        orm.valid_to = overtime.rule.date_range.valid_to
-
-        await self.session.flush()
-        await self.session.refresh(orm)
-        return self._to_domain(orm)
 
     async def delete(self, overtime_id: UUID) -> bool:
         stmt = select(OvertimeORM).where(OvertimeORM.id == overtime_id)
@@ -412,12 +358,13 @@ class SQLAlchemySickLeaveRepository(SickLeaveRepository):
             valid_to=sick_leave.rule.date_range.valid_to,
         )
 
-    async def add(self, sick_leave: SickLeave) -> SickLeave:
+    async def save(self, sick_leave: SickLeave) -> SickLeave:
+        """Save sick leave to the database (add or update)."""
         orm = self._to_orm(sick_leave)
-        self.session.add(orm)
+        merged_orm = await self.session.merge(orm)
         await self.session.flush()
-        await self.session.refresh(orm)
-        return self._to_domain(orm)
+        await self.session.refresh(merged_orm)
+        return self._to_domain(merged_orm)
 
     async def get_by_id(self, sick_leave_id: UUID) -> Optional[SickLeave]:
         stmt = select(SickLeaveORM).where(SickLeaveORM.id == sick_leave_id)
@@ -434,24 +381,6 @@ class SQLAlchemySickLeaveRepository(SickLeaveRepository):
         result = await self.session.execute(stmt)
         orms = result.scalars().all()
         return [self._to_domain(orm) for orm in orms]
-
-    async def update(self, sick_leave: SickLeave) -> SickLeave:
-        stmt = select(SickLeaveORM).where(SickLeaveORM.id == sick_leave.id)
-        result = await self.session.execute(stmt)
-        orm = result.scalar_one_or_none()
-
-        if not orm:
-            raise ValueError(f"SickLeave {sick_leave.id} not found")
-
-        orm.employee_id = sick_leave.employee_id
-        orm.percentage = sick_leave.rule.percentage
-        orm.max_days = sick_leave.rule.max_days
-        orm.valid_from = sick_leave.rule.date_range.valid_from
-        orm.valid_to = sick_leave.rule.date_range.valid_to
-
-        await self.session.flush()
-        await self.session.refresh(orm)
-        return self._to_domain(orm)
 
     async def delete(self, sick_leave_id: UUID) -> bool:
         stmt = select(SickLeaveORM).where(SickLeaveORM.id == sick_leave_id)

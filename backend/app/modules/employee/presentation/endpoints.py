@@ -123,12 +123,10 @@ async def list_employees(
     if limit < 1 or limit > 100:
         raise HTTPException(status_code=400, detail="Limit must be between 1 and 100")
 
-    skip = (page - 1) * limit
-
     read_model = EmployeeReadModel(db)
     handler = ListEmployeesHandler(read_model)
 
-    query = ListEmployeesQuery(skip=skip, limit=limit)
+    query = ListEmployeesQuery(page=page, limit=limit)
     items, total_count = await handler.handle(query)
 
     base_url = str(request.url).split("?")[0]

@@ -27,9 +27,5 @@ class ReportRepository(ABC):
         pass
 
     @abstractmethod
-    async def update(self, report: Report) -> Report:
-        pass
-
-    @abstractmethod
     async def delete(self, report_id: UUID) -> None:
         pass

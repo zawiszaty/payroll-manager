@@ -8,7 +8,7 @@ from app.modules.compensation.domain.models import Bonus, Deduction, Overtime, R
 
 class RateRepository(ABC):
     @abstractmethod
-    async def add(self, rate: Rate) -> Rate:
+    async def save(self, rate: Rate) -> Rate:
         pass
 
     @abstractmethod
@@ -28,17 +28,13 @@ class RateRepository(ABC):
         pass
 
     @abstractmethod
-    async def update(self, rate: Rate) -> Rate:
-        pass
-
-    @abstractmethod
     async def delete(self, rate_id: UUID) -> bool:
         pass
 
 
 class BonusRepository(ABC):
     @abstractmethod
-    async def add(self, bonus: Bonus) -> Bonus:
+    async def save(self, bonus: Bonus) -> Bonus:
         pass
 
     @abstractmethod
@@ -60,7 +56,7 @@ class BonusRepository(ABC):
 
 class DeductionRepository(ABC):
     @abstractmethod
-    async def add(self, deduction: Deduction) -> Deduction:
+    async def save(self, deduction: Deduction) -> Deduction:
         pass
 
     @abstractmethod
@@ -80,17 +76,13 @@ class DeductionRepository(ABC):
         pass
 
     @abstractmethod
-    async def update(self, deduction: Deduction) -> Deduction:
-        pass
-
-    @abstractmethod
     async def delete(self, deduction_id: UUID) -> bool:
         pass
 
 
 class OvertimeRepository(ABC):
     @abstractmethod
-    async def add(self, overtime: Overtime) -> Overtime:
+    async def save(self, overtime: Overtime) -> Overtime:
         pass
 
     @abstractmethod
@@ -102,17 +94,13 @@ class OvertimeRepository(ABC):
         pass
 
     @abstractmethod
-    async def update(self, overtime: Overtime) -> Overtime:
-        pass
-
-    @abstractmethod
     async def delete(self, overtime_id: UUID) -> bool:
         pass
 
 
 class SickLeaveRepository(ABC):
     @abstractmethod
-    async def add(self, sick_leave: SickLeave) -> SickLeave:
+    async def save(self, sick_leave: SickLeave) -> SickLeave:
         pass
 
     @abstractmethod
@@ -121,10 +109,6 @@ class SickLeaveRepository(ABC):
 
     @abstractmethod
     async def get_by_employee_id(self, employee_id: UUID) -> List[SickLeave]:
-        pass
-
-    @abstractmethod
-    async def update(self, sick_leave: SickLeave) -> SickLeave:
         pass
 
     @abstractmethod

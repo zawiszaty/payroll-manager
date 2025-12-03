@@ -53,7 +53,7 @@ class CreateRateHandler:
             valid_to=command.valid_to,
             description=command.description,
         )
-        return await self.repository.add(rate)
+        return await self.repository.save(rate)
 
 
 class GetRateHandler:
@@ -85,7 +85,7 @@ class ListRatesHandler:
         self.read_model = read_model
 
     async def handle(self, query: ListRatesQuery):
-        items, total_count = await self.read_model.list(skip=query.skip, limit=query.limit)
+        items, total_count = await self.read_model.list(page=query.page, limit=query.limit)
         return items, total_count
 
 
@@ -103,7 +103,7 @@ class CreateBonusHandler:
             payment_date=command.payment_date,
             description=command.description,
         )
-        return await self.repository.add(bonus)
+        return await self.repository.save(bonus)
 
 
 class GetBonusHandler:
@@ -127,7 +127,7 @@ class ListBonusesHandler:
         self.read_model = read_model
 
     async def handle(self, query: ListBonusesQuery):
-        items, total_count = await self.read_model.list(skip=query.skip, limit=query.limit)
+        items, total_count = await self.read_model.list(page=query.page, limit=query.limit)
         return items, total_count
 
 
@@ -146,7 +146,7 @@ class CreateDeductionHandler:
             valid_to=command.valid_to,
             description=command.description,
         )
-        return await self.repository.add(deduction)
+        return await self.repository.save(deduction)
 
 
 class GetDeductionsByEmployeeHandler:
@@ -178,7 +178,7 @@ class CreateOvertimeHandler:
             valid_from=command.valid_from,
             valid_to=command.valid_to,
         )
-        return await self.repository.add(overtime)
+        return await self.repository.save(overtime)
 
 
 class GetOvertimeByEmployeeHandler:
@@ -202,7 +202,7 @@ class CreateSickLeaveHandler:
             valid_from=command.valid_from,
             valid_to=command.valid_to,
         )
-        return await self.repository.add(sick_leave)
+        return await self.repository.save(sick_leave)
 
 
 class GetSickLeaveByEmployeeHandler:

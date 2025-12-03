@@ -103,7 +103,7 @@ class AuthenticationService:
             role=role,
             full_name=full_name,
         )
-        return await self.user_repository.create(user)
+        return await self.user_repository.save(user)
 
     async def change_password(self, user_id: UUID, new_password: str) -> User:
         """Change user password."""
@@ -113,7 +113,7 @@ class AuthenticationService:
 
         hashed_password = self.hash_password(new_password)
         user.update_password(hashed_password)
-        return await self.user_repository.update(user)
+        return await self.user_repository.save(user)
 
     @staticmethod
     def create_refresh_token() -> str:
@@ -126,7 +126,7 @@ class AuthenticationService:
         expires_at = datetime.now(UTC) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
 
         user.set_refresh_token(refresh_token, expires_at)
-        updated_user = await self.user_repository.update(user)
+        updated_user = await self.user_repository.save(user)
 
         return refresh_token, updated_user
 
@@ -142,4 +142,4 @@ class AuthenticationService:
     async def revoke_refresh_token(self, user: User) -> User:
         """Revoke a user's refresh token (logout)."""
         user.clear_refresh_token()
-        return await self.user_repository.update(user)
+        return await self.user_repository.save(user)

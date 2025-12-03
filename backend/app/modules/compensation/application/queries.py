@@ -21,7 +21,7 @@ class GetActiveRateQuery:
 
 @dataclass
 class ListRatesQuery:
-    skip: int = 0
+    page: int = 1
     limit: int = 100
 
 
@@ -37,7 +37,7 @@ class GetBonusesByEmployeeQuery:
 
 @dataclass
 class ListBonusesQuery:
-    skip: int = 0
+    page: int = 1
     limit: int = 100
 
 

@@ -48,7 +48,7 @@ class ReportingEventHandler:
 
                 # Start processing
                 report.start_processing()
-                await repository.update(report)
+                await repository.save(report)
                 await session.commit()
 
                 logger.info(f"Starting generation of report {report_id}")
@@ -62,7 +62,7 @@ class ReportingEventHandler:
 
                 # Mark as completed
                 report.complete(str(file_path))
-                await repository.update(report)
+                await repository.save(report)
                 await session.commit()
 
                 logger.info(f"Report {report_id} generated successfully: {file_path}")
@@ -74,7 +74,7 @@ class ReportingEventHandler:
                 # Mark as failed
                 try:
                     report.fail(str(e))
-                    await repository.update(report)
+                    await repository.save(report)
                     await session.commit()
                 except Exception as update_error:
                     logger.error(f"Failed to update report status: {update_error}")

@@ -1,3 +1,4 @@
+from datetime import date
 from typing import List, Optional
 from uuid import UUID
 
@@ -55,12 +56,13 @@ class SQLAlchemyContractRepository(ContractRepository):
             canceled_at=contract.canceled_at,
         )
 
-    async def add(self, contract: Contract) -> Contract:
+    async def save(self, contract: Contract) -> Contract:
+        """Save a contract to the database (add or update)."""
         orm = self._to_orm(contract)
-        self.session.add(orm)
+        merged_orm = await self.session.merge(orm)
         await self.session.flush()
-        await self.session.refresh(orm)
-        return self._to_domain(orm)
+        await self.session.refresh(merged_orm)
+        return self._to_domain(merged_orm)
 
     async def get_by_id(self, contract_id: UUID) -> Optional[Contract]:
         stmt = select(ContractORM).where(ContractORM.id == contract_id)
@@ -95,32 +97,6 @@ class SQLAlchemyContractRepository(ContractRepository):
         orms = result.scalars().all()
         return [self._to_domain(orm) for orm in orms]
 
-    async def update(self, contract: Contract) -> Contract:
-        stmt = select(ContractORM).where(ContractORM.id == contract.id)
-        result = await self.session.execute(stmt)
-        orm = result.scalar_one_or_none()
-
-        if not orm:
-            raise ValueError(f"Contract {contract.id} not found")
-
-        orm.employee_id = contract.employee_id
-        orm.contract_type = contract.terms.contract_type
-        orm.status = contract.status
-        orm.version = contract.version
-        orm.rate_amount = contract.terms.rate.amount
-        orm.rate_currency = contract.terms.rate.currency
-        orm.valid_from = contract.terms.date_range.valid_from
-        orm.valid_to = contract.terms.date_range.valid_to
-        orm.hours_per_week = contract.terms.hours_per_week
-        orm.commission_percentage = contract.terms.commission_percentage
-        orm.description = contract.terms.description
-        orm.cancellation_reason = contract.cancellation_reason
-        orm.canceled_at = contract.canceled_at
-
-        await self.session.flush()
-        await self.session.refresh(orm)
-        return self._to_domain(orm)
-
     async def delete(self, contract_id: UUID) -> bool:
         stmt = select(ContractORM).where(ContractORM.id == contract_id)
         result = await self.session.execute(stmt)
@@ -131,3 +107,16 @@ class SQLAlchemyContractRepository(ContractRepository):
 
         await self.session.delete(orm)
         return True
+
+    async def get_expired_contracts(self, check_date: date) -> List[Contract]:
+        """Get all ACTIVE contracts where valid_to < check_date"""
+        stmt = (
+            select(ContractORM)
+            .where(ContractORM.status == ContractStatus.ACTIVE)
+            .where(ContractORM.valid_to.isnot(None))
+            .where(ContractORM.valid_to < check_date)
+            .order_by(ContractORM.valid_to)
+        )
+        result = await self.session.execute(stmt)
+        orms = result.scalars().all()
+        return [self._to_domain(orm) for orm in orms]

@@ -9,7 +9,7 @@ class GetEmployeeQuery:
 
 @dataclass
 class ListEmployeesQuery:
-    skip: int = 0
+    page: int = 1
     limit: int = 100
 
 

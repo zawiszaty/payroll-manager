@@ -15,10 +15,6 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api/v1"
 
     DATABASE_URL: str
-    RABBITMQ_URL: str
-    RABBITMQ_EXCHANGE_EMPLOYEE: str = "employee.events"
-    RABBITMQ_EXCHANGE_CONTRACT: str = "contract.events"
-    REDIS_URL: str
 
     SECRET_KEY: str = "your-secret-key-change-in-production"
     ALGORITHM: str = "HS256"

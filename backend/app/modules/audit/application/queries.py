@@ -12,7 +12,7 @@ class GetAuditLogQuery:
 
 @dataclass
 class ListAuditLogsQuery:
-    skip: int = 0
+    page: int = 1
     limit: int = 100
     entity_type: EntityType | None = None
     action: AuditAction | None = None
@@ -22,20 +22,20 @@ class ListAuditLogsQuery:
 class GetAuditLogsByEntityQuery:
     entity_type: EntityType
     entity_id: UUID
-    skip: int = 0
+    page: int = 1
     limit: int = 100
 
 
 @dataclass
 class GetAuditLogsByEmployeeQuery:
     employee_id: UUID
-    skip: int = 0
+    page: int = 1
     limit: int = 100
 
 
 @dataclass
 class GetAuditTimelineQuery:
-    skip: int = 0
+    page: int = 1
     limit: int = 100
     entity_type: EntityType | None = None
     employee_id: UUID | None = None
