@@ -21,7 +21,6 @@ from app.modules.audit.application.queries import (
     ListAuditLogsQuery,
 )
 from app.modules.audit.domain.value_objects import AuditAction, EntityType
-from app.modules.audit.infrastructure.repository import SQLAlchemyAuditLogRepository
 from app.modules.audit.presentation.views import AuditLogListResponse, AuditLogResponse
 from app.modules.auth.infrastructure.dependencies import get_current_active_user
 
@@ -50,19 +49,13 @@ async def list_audit_logs(
             status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid action: {action}"
         )
 
-    repository = SQLAlchemyAuditLogRepository(db)
-    handler = ListAuditLogsHandler(repository)
+    handler = ListAuditLogsHandler(db)
     query = ListAuditLogsQuery(
         page=page, limit=limit, entity_type=entity_type_enum, action=action_enum
     )
-    audit_logs = await handler.handle(query)
+    items, total_count = await handler.handle(query)
 
-    return AuditLogListResponse(
-        items=[AuditLogResponse.from_domain(log) for log in audit_logs],
-        total=len(audit_logs),
-        page=page,
-        limit=limit,
-    )
+    return AuditLogListResponse(items=items, total=total_count, page=page, limit=limit)
 
 
 @router.get("/entity/{entity_type}/{entity_id}", response_model=AuditLogListResponse)
@@ -80,19 +73,13 @@ async def get_audit_logs_by_entity(
             status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid entity type: {entity_type}"
         )
 
-    repository = SQLAlchemyAuditLogRepository(db)
-    handler = GetAuditLogsByEntityHandler(repository)
+    handler = GetAuditLogsByEntityHandler(db)
     query = GetAuditLogsByEntityQuery(
         entity_type=entity_type_enum, entity_id=entity_id, page=page, limit=limit
     )
-    audit_logs = await handler.handle(query)
+    items, total_count = await handler.handle(query)
 
-    return AuditLogListResponse(
-        items=[AuditLogResponse.from_domain(log) for log in audit_logs],
-        total=len(audit_logs),
-        page=page,
-        limit=limit,
-    )
+    return AuditLogListResponse(items=items, total=total_count, page=page, limit=limit)
 
 
 @router.get("/employee/{employee_id}", response_model=AuditLogListResponse)
@@ -102,17 +89,11 @@ async def get_audit_logs_by_employee(
     limit: int = Query(100, ge=1, le=1000),
     db: AsyncSession = Depends(get_db),
 ) -> AuditLogListResponse:
-    repository = SQLAlchemyAuditLogRepository(db)
-    handler = GetAuditLogsByEmployeeHandler(repository)
+    handler = GetAuditLogsByEmployeeHandler(db)
     query = GetAuditLogsByEmployeeQuery(employee_id=employee_id, page=page, limit=limit)
-    audit_logs = await handler.handle(query)
+    items, total_count = await handler.handle(query)
 
-    return AuditLogListResponse(
-        items=[AuditLogResponse.from_domain(log) for log in audit_logs],
-        total=len(audit_logs),
-        page=page,
-        limit=limit,
-    )
+    return AuditLogListResponse(items=items, total=total_count, page=page, limit=limit)
 
 
 @router.get("/timeline", response_model=AuditLogListResponse)
@@ -132,8 +113,7 @@ async def get_audit_timeline(
             status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid entity_type: {entity_type}"
         )
 
-    repository = SQLAlchemyAuditLogRepository(db)
-    handler = GetAuditTimelineHandler(repository)
+    handler = GetAuditTimelineHandler(db)
     query = GetAuditTimelineQuery(
         page=page,
         limit=limit,
@@ -142,24 +122,18 @@ async def get_audit_timeline(
         date_from=date_from,
         date_to=date_to,
     )
-    audit_logs = await handler.handle(query)
+    items, total_count = await handler.handle(query)
 
-    return AuditLogListResponse(
-        items=[AuditLogResponse.from_domain(log) for log in audit_logs],
-        total=len(audit_logs),
-        page=page,
-        limit=limit,
-    )
+    return AuditLogListResponse(items=items, total=total_count, page=page, limit=limit)
 
 
 @router.get("/{audit_id}", response_model=AuditLogResponse)
 async def get_audit_log(audit_id: UUID, db: AsyncSession = Depends(get_db)) -> AuditLogResponse:
-    repository = SQLAlchemyAuditLogRepository(db)
-    handler = GetAuditLogHandler(repository)
+    handler = GetAuditLogHandler(db)
     query = GetAuditLogQuery(audit_id=audit_id)
     audit_log = await handler.handle(query)
 
     if not audit_log:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Audit log not found")
 
-    return AuditLogResponse.from_domain(audit_log)
+    return audit_log
