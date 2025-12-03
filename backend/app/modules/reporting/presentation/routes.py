@@ -16,16 +16,10 @@ from app.modules.reporting.application.handlers import (
     CreateReportHandler,
     DeleteReportHandler,
     GetReportHandler,
-    ListReportsByStatusHandler,
-    ListReportsByTypeHandler,
-    ListReportsHandler,
 )
-from app.modules.reporting.application.queries import (
-    GetReportQuery,
-    ListReportsByStatusQuery,
-    ListReportsByTypeQuery,
-    ListReportsQuery,
-)
+from app.modules.reporting.application.queries import GetReportQuery
+from app.modules.reporting.domain.value_objects import ReportStatus, ReportType
+from app.modules.reporting.infrastructure.read_model import ReportReadModel
 from app.modules.reporting.infrastructure.repository import (
     SQLAlchemyReportRepository,
 )
@@ -85,61 +79,56 @@ async def create_report(
 
 @router.get("/", response_model=ReportListResponse)
 async def list_reports(db: AsyncSession = Depends(get_db)) -> ReportListResponse:
-    repository = SQLAlchemyReportRepository(db)
-    handler = ListReportsHandler(repository)
+    read_model = ReportReadModel(db)
+    reports, _ = await read_model.list()
 
-    query = ListReportsQuery()
-    reports = await handler.handle(query)
-
-    return ReportListResponse(reports=[ReportResponse.from_entity(report) for report in reports])
+    return ReportListResponse(reports=reports)
 
 
 @router.get("/{report_id}", response_model=ReportResponse)
 async def get_report(report_id: UUID, db: AsyncSession = Depends(get_db)) -> ReportResponse:
-    repository = SQLAlchemyReportRepository(db)
-    handler = GetReportHandler(repository)
-
-    query = GetReportQuery(report_id=report_id)
-    report = await handler.handle(query)
+    read_model = ReportReadModel(db)
+    report = await read_model.get_by_id(report_id)
 
     if not report:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
 
-    return ReportResponse.from_entity(report)
+    return report
 
 
 @router.get("/type/{report_type}", response_model=ReportListResponse)
 async def list_reports_by_type(
     report_type: str, db: AsyncSession = Depends(get_db)
 ) -> ReportListResponse:
-    repository = SQLAlchemyReportRepository(db)
-    handler = ListReportsByTypeHandler(repository)
-
     try:
-        query = ListReportsByTypeQuery(report_type=report_type)
-        reports = await handler.handle(query)
-        return ReportListResponse(
-            reports=[ReportResponse.from_entity(report) for report in reports]
+        report_type_enum = ReportType(report_type)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid report type: {report_type}"
         )
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    read_model = ReportReadModel(db)
+    reports, _ = await read_model.get_by_type(report_type_enum)
+
+    return ReportListResponse(reports=reports)
 
 
 @router.get("/status/{report_status}", response_model=ReportListResponse)
 async def list_reports_by_status(
     report_status: str, db: AsyncSession = Depends(get_db)
 ) -> ReportListResponse:
-    repository = SQLAlchemyReportRepository(db)
-    handler = ListReportsByStatusHandler(repository)
-
     try:
-        query = ListReportsByStatusQuery(status=report_status)
-        reports = await handler.handle(query)
-        return ReportListResponse(
-            reports=[ReportResponse.from_entity(report) for report in reports]
+        status_enum = ReportStatus(report_status)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid report status: {report_status}",
         )
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    read_model = ReportReadModel(db)
+    reports, _ = await read_model.get_by_status(status_enum)
+
+    return ReportListResponse(reports=reports)
 
 
 @router.get("/{report_id}/download")
