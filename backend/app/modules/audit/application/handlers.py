@@ -1,3 +1,5 @@
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.modules.audit.application.queries import (
     GetAuditLogQuery,
     GetAuditLogsByEmployeeQuery,
@@ -5,58 +7,68 @@ from app.modules.audit.application.queries import (
     GetAuditTimelineQuery,
     ListAuditLogsQuery,
 )
-from app.modules.audit.domain.models import AuditLog
-from app.modules.audit.domain.repository import AuditLogRepository
+from app.modules.audit.infrastructure.read_model import AuditLogReadModel
+from app.modules.audit.presentation.views import AuditLogResponse
 
 
 class GetAuditLogHandler:
-    def __init__(self, repository: AuditLogRepository):
-        self.repository = repository
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-    async def handle(self, query: GetAuditLogQuery) -> AuditLog | None:
-        return await self.repository.get_by_id(query.audit_id)
+    async def handle(self, query: GetAuditLogQuery) -> AuditLogResponse | None:
+        read_model = AuditLogReadModel(self.session)
+        return await read_model.get_by_id(query.audit_id)
 
 
 class ListAuditLogsHandler:
-    def __init__(self, repository: AuditLogRepository):
-        self.repository = repository
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-    async def handle(self, query: ListAuditLogsQuery) -> list[AuditLog]:
-        return await self.repository.list_all(
-            page=query.page, limit=query.limit, entity_type=query.entity_type, action=query.action
+    async def handle(self, query: ListAuditLogsQuery) -> tuple[list[AuditLogResponse], int]:
+        skip = (query.page - 1) * query.limit
+        read_model = AuditLogReadModel(self.session)
+        return await read_model.list(
+            skip=skip, limit=query.limit, entity_type=query.entity_type, action=query.action
         )
 
 
 class GetAuditLogsByEntityHandler:
-    def __init__(self, repository: AuditLogRepository):
-        self.repository = repository
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-    async def handle(self, query: GetAuditLogsByEntityQuery) -> list[AuditLog]:
-        return await self.repository.get_by_entity(
-            entity_type=query.entity_type,
-            entity_id=query.entity_id,
-            page=query.page,
-            limit=query.limit,
+    async def handle(
+        self, query: GetAuditLogsByEntityQuery
+    ) -> tuple[list[AuditLogResponse], int]:
+        skip = (query.page - 1) * query.limit
+        read_model = AuditLogReadModel(self.session)
+        return await read_model.get_by_entity(
+            entity_type=query.entity_type, entity_id=query.entity_id, skip=skip, limit=query.limit
         )
 
 
 class GetAuditLogsByEmployeeHandler:
-    def __init__(self, repository: AuditLogRepository):
-        self.repository = repository
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-    async def handle(self, query: GetAuditLogsByEmployeeQuery) -> list[AuditLog]:
-        return await self.repository.get_by_employee(
-            employee_id=query.employee_id, page=query.page, limit=query.limit
+    async def handle(
+        self, query: GetAuditLogsByEmployeeQuery
+    ) -> tuple[list[AuditLogResponse], int]:
+        skip = (query.page - 1) * query.limit
+        read_model = AuditLogReadModel(self.session)
+        return await read_model.get_by_employee(
+            employee_id=query.employee_id, skip=skip, limit=query.limit
         )
 
 
 class GetAuditTimelineHandler:
-    def __init__(self, repository: AuditLogRepository):
-        self.repository = repository
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-    async def handle(self, query: GetAuditTimelineQuery) -> list[AuditLog]:
-        return await self.repository.get_timeline(
-            page=query.page,
+    async def handle(self, query: GetAuditTimelineQuery) -> tuple[list[AuditLogResponse], int]:
+        skip = (query.page - 1) * query.limit
+        read_model = AuditLogReadModel(self.session)
+        return await read_model.get_timeline(
+            skip=skip,
             limit=query.limit,
             entity_type=query.entity_type,
             employee_id=query.employee_id,

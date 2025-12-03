@@ -17,12 +17,24 @@ from app.modules.absence.application.handlers import (
     CancelAbsenceHandler,
     CreateAbsenceBalanceHandler,
     CreateAbsenceHandler,
+    GetAbsenceBalanceHandler,
+    GetAbsenceBalancesByEmployeeAndYearHandler,
+    GetAbsenceBalancesByEmployeeHandler,
+    GetAbsenceHandler,
+    GetAbsencesByEmployeeHandler,
+    ListAbsenceBalancesHandler,
+    ListAbsencesHandler,
     RejectAbsenceHandler,
     UpdateAbsenceBalanceHandler,
 )
-from app.modules.absence.infrastructure.read_model import (
-    AbsenceBalanceReadModel,
-    AbsenceReadModel,
+from app.modules.absence.application.queries import (
+    GetAbsenceBalanceQuery,
+    GetAbsenceBalancesByEmployeeAndYearQuery,
+    GetAbsenceBalancesByEmployeeQuery,
+    GetAbsenceQuery,
+    GetAbsencesByEmployeeQuery,
+    ListAbsenceBalancesQuery,
+    ListAbsencesQuery,
 )
 from app.modules.absence.infrastructure.repository import (
     SQLAlchemyAbsenceBalanceRepository,
@@ -107,13 +119,14 @@ async def create_absence(data: AbsenceCreate, session: AsyncSession = Depends(ge
 
 @router.get("/absences/{absence_id}", response_model=AbsenceResponse)
 async def get_absence(absence_id: UUID, session: AsyncSession = Depends(get_db)):
-    read_model = AbsenceReadModel(session)
-    absence = await read_model.get_by_id(absence_id)
+    handler = GetAbsenceHandler(session)
+    query = GetAbsenceQuery(absence_id=absence_id)
 
-    if not absence:
-        raise HTTPException(status_code=404, detail=f"Absence {absence_id} not found")
-
-    return absence
+    try:
+        absence = await handler.handle(query)
+        return absence
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.get("/absences/", response_model=PaginatedResponse[AbsenceResponse])
@@ -130,8 +143,9 @@ async def list_absences(
 
     skip = (page - 1) * limit
 
-    read_model = AbsenceReadModel(session)
-    items, total_count = await read_model.list(skip=skip, limit=limit)
+    handler = ListAbsencesHandler(session)
+    query = ListAbsencesQuery(skip=skip, limit=limit)
+    items, total_count = await handler.handle(query)
 
     base_url = str(request.url).split("?")[0]
     return create_paginated_response(
@@ -145,8 +159,9 @@ async def list_absences(
 
 @router.get("/absences/employee/{employee_id}", response_model=AbsenceListResponse)
 async def get_absences_by_employee(employee_id: UUID, session: AsyncSession = Depends(get_db)):
-    read_model = AbsenceReadModel(session)
-    items = await read_model.get_by_employee(employee_id)
+    handler = GetAbsencesByEmployeeHandler(session)
+    query = GetAbsencesByEmployeeQuery(employee_id=employee_id)
+    items = await handler.handle(query)
     return AbsenceListResponse(items=items, total=len(items))
 
 
@@ -225,13 +240,14 @@ async def create_absence_balance(
 
 @router.get("/balances/{balance_id}", response_model=AbsenceBalanceResponse)
 async def get_absence_balance(balance_id: UUID, session: AsyncSession = Depends(get_db)):
-    read_model = AbsenceBalanceReadModel(session)
-    balance = await read_model.get_by_id(balance_id)
+    handler = GetAbsenceBalanceHandler(session)
+    query = GetAbsenceBalanceQuery(balance_id=balance_id)
 
-    if not balance:
-        raise HTTPException(status_code=404, detail=f"Balance {balance_id} not found")
-
-    return balance
+    try:
+        balance = await handler.handle(query)
+        return balance
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.get("/balances/", response_model=PaginatedResponse[AbsenceBalanceResponse])
@@ -248,8 +264,9 @@ async def list_absence_balances(
 
     skip = (page - 1) * limit
 
-    read_model = AbsenceBalanceReadModel(session)
-    items, total_count = await read_model.list(skip=skip, limit=limit)
+    handler = ListAbsenceBalancesHandler(session)
+    query = ListAbsenceBalancesQuery(skip=skip, limit=limit)
+    items, total_count = await handler.handle(query)
 
     base_url = str(request.url).split("?")[0]
     return create_paginated_response(
@@ -265,8 +282,9 @@ async def list_absence_balances(
 async def get_absence_balances_by_employee(
     employee_id: UUID, session: AsyncSession = Depends(get_db)
 ):
-    read_model = AbsenceBalanceReadModel(session)
-    items = await read_model.get_by_employee(employee_id)
+    handler = GetAbsenceBalancesByEmployeeHandler(session)
+    query = GetAbsenceBalancesByEmployeeQuery(employee_id=employee_id)
+    items = await handler.handle(query)
     return AbsenceBalanceListResponse(items=items, total=len(items))
 
 
@@ -277,8 +295,9 @@ async def get_absence_balances_by_employee(
 async def get_absence_balances_by_employee_and_year(
     employee_id: UUID, year: int, session: AsyncSession = Depends(get_db)
 ):
-    read_model = AbsenceBalanceReadModel(session)
-    items = await read_model.get_by_employee_and_year(employee_id, year)
+    handler = GetAbsenceBalancesByEmployeeAndYearHandler(session)
+    query = GetAbsenceBalancesByEmployeeAndYearQuery(employee_id=employee_id, year=year)
+    items = await handler.handle(query)
     return AbsenceBalanceListResponse(items=items, total=len(items))
 
 

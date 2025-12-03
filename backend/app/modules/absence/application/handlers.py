@@ -1,5 +1,7 @@
 from typing import List
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.modules.absence.application.commands import (
     ApproveAbsenceCommand,
     CancelAbsenceCommand,
@@ -23,6 +25,11 @@ from app.modules.absence.domain.repository import (
     AbsenceBalanceRepository,
     AbsenceRepository,
 )
+from app.modules.absence.infrastructure.read_model import (
+    AbsenceBalanceReadModel,
+    AbsenceReadModel,
+)
+from app.modules.absence.presentation.schemas import AbsenceBalanceResponse, AbsenceResponse
 from app.shared.domain.value_objects import DateRange
 
 
@@ -177,78 +184,82 @@ class UpdateAbsenceBalanceHandler:
 
 
 class GetAbsenceHandler:
-    def __init__(self, absence_repository: AbsenceRepository):
-        self.absence_repository = absence_repository
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-    async def handle(self, query: GetAbsenceQuery) -> Absence:
-        absence = await self.absence_repository.get_by_id(query.absence_id)
+    async def handle(self, query: GetAbsenceQuery) -> AbsenceResponse:
+        read_model = AbsenceReadModel(self.session)
+        absence = await read_model.get_by_id(query.absence_id)
         if not absence:
             raise ValueError(f"Absence {query.absence_id} not found")
         return absence
 
 
 class ListAbsencesHandler:
-    def __init__(self, absence_repository: AbsenceRepository):
-        self.absence_repository = absence_repository
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
     async def handle(self, query: ListAbsencesQuery):
-        items, total_count = await self.absence_repository.get_all(
-            skip=query.skip, limit=query.limit
-        )
+        read_model = AbsenceReadModel(self.session)
+        items, total_count = await read_model.list(skip=query.skip, limit=query.limit)
         return items, total_count
 
 
 class GetAbsencesByEmployeeHandler:
-    def __init__(self, absence_repository: AbsenceRepository):
-        self.absence_repository = absence_repository
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-    async def handle(self, query: GetAbsencesByEmployeeQuery) -> List[Absence]:
-        return await self.absence_repository.get_by_employee(query.employee_id)
+    async def handle(self, query: GetAbsencesByEmployeeQuery) -> List[AbsenceResponse]:
+        read_model = AbsenceReadModel(self.session)
+        return await read_model.get_by_employee(query.employee_id)
 
 
 class GetAbsencesByEmployeeAndStatusHandler:
-    def __init__(self, absence_repository: AbsenceRepository):
-        self.absence_repository = absence_repository
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-    async def handle(self, query: GetAbsencesByEmployeeAndStatusQuery) -> List[Absence]:
-        return await self.absence_repository.get_by_employee_and_status(
-            query.employee_id, query.status
-        )
+    async def handle(self, query: GetAbsencesByEmployeeAndStatusQuery) -> List[AbsenceResponse]:
+        read_model = AbsenceReadModel(self.session)
+        return await read_model.get_by_employee_and_status(query.employee_id, query.status)
 
 
 class GetAbsenceBalanceHandler:
-    def __init__(self, balance_repository: AbsenceBalanceRepository):
-        self.balance_repository = balance_repository
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-    async def handle(self, query: GetAbsenceBalanceQuery) -> AbsenceBalance:
-        balance = await self.balance_repository.get_by_id(query.balance_id)
+    async def handle(self, query: GetAbsenceBalanceQuery) -> AbsenceBalanceResponse:
+        read_model = AbsenceBalanceReadModel(self.session)
+        balance = await read_model.get_by_id(query.balance_id)
         if not balance:
             raise ValueError(f"Balance {query.balance_id} not found")
         return balance
 
 
 class ListAbsenceBalancesHandler:
-    def __init__(self, balance_repository: AbsenceBalanceRepository):
-        self.balance_repository = balance_repository
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
     async def handle(self, query: ListAbsenceBalancesQuery):
-        items, total_count = await self.balance_repository.get_all(
-            skip=query.skip, limit=query.limit
-        )
+        read_model = AbsenceBalanceReadModel(self.session)
+        items, total_count = await read_model.list(skip=query.skip, limit=query.limit)
         return items, total_count
 
 
 class GetAbsenceBalancesByEmployeeHandler:
-    def __init__(self, balance_repository: AbsenceBalanceRepository):
-        self.balance_repository = balance_repository
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-    async def handle(self, query: GetAbsenceBalancesByEmployeeQuery) -> List[AbsenceBalance]:
-        return await self.balance_repository.get_by_employee(query.employee_id)
+    async def handle(self, query: GetAbsenceBalancesByEmployeeQuery) -> List[AbsenceBalanceResponse]:
+        read_model = AbsenceBalanceReadModel(self.session)
+        return await read_model.get_by_employee(query.employee_id)
 
 
 class GetAbsenceBalancesByEmployeeAndYearHandler:
-    def __init__(self, balance_repository: AbsenceBalanceRepository):
-        self.balance_repository = balance_repository
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-    async def handle(self, query: GetAbsenceBalancesByEmployeeAndYearQuery) -> List[AbsenceBalance]:
-        return await self.balance_repository.get_by_employee_and_year(query.employee_id, query.year)
+    async def handle(
+        self, query: GetAbsenceBalancesByEmployeeAndYearQuery
+    ) -> List[AbsenceBalanceResponse]:
+        read_model = AbsenceBalanceReadModel(self.session)
+        return await read_model.get_by_employee_and_year(query.employee_id, query.year)
