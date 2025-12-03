@@ -99,8 +99,10 @@ class SQLAlchemyEmployeeRepository(EmployeeRepository):
         orm = self._to_orm(employee)
         merged_orm = await self.session.merge(orm)
         await self.session.flush()
+        await self.session.refresh(merged_orm)
+        # Load statuses relationship
         await self.session.refresh(merged_orm, ["statuses"])
-        return employee
+        return self._to_domain(merged_orm)
 
     async def get_by_id(self, employee_id: UUID) -> Optional[Employee]:
         stmt = (

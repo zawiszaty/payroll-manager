@@ -34,7 +34,8 @@ class ContractRepository(ABC):
     @abstractmethod
     async def get_expired_contracts(self, check_date: date) -> List[Contract]:
         """
-        Get all ACTIVE contracts with valid_to <= check_date.
+        Get all ACTIVE contracts where valid_to < check_date.
+        A contract is expired when the check_date is after its last valid day.
         This query should be performed at the database level for scalability.
         """
         pass

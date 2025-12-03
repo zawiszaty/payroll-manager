@@ -109,12 +109,12 @@ class SQLAlchemyContractRepository(ContractRepository):
         return True
 
     async def get_expired_contracts(self, check_date: date) -> List[Contract]:
-        """Get all ACTIVE contracts with valid_to <= check_date"""
+        """Get all ACTIVE contracts where valid_to < check_date"""
         stmt = (
             select(ContractORM)
             .where(ContractORM.status == ContractStatus.ACTIVE)
             .where(ContractORM.valid_to.isnot(None))
-            .where(ContractORM.valid_to <= check_date)
+            .where(ContractORM.valid_to < check_date)
             .order_by(ContractORM.valid_to)
         )
         result = await self.session.execute(stmt)

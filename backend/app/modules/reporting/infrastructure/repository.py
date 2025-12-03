@@ -116,7 +116,7 @@ class SQLAlchemyReportRepository(ReportRepository):
         merged_orm = await self.session.merge(orm)
         await self.session.flush()
         await self.session.refresh(merged_orm)
-        return report
+        return self._to_domain(merged_orm)
 
     async def get_by_id(self, report_id: UUID) -> Report | None:
         result = await self.session.execute(select(ReportORM).where(ReportORM.id == report_id))
