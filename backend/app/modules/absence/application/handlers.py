@@ -249,7 +249,9 @@ class GetAbsenceBalancesByEmployeeHandler:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def handle(self, query: GetAbsenceBalancesByEmployeeQuery) -> List[AbsenceBalanceResponse]:
+    async def handle(
+        self, query: GetAbsenceBalancesByEmployeeQuery
+    ) -> List[AbsenceBalanceResponse]:
         read_model = AbsenceBalanceReadModel(self.session)
         return await read_model.get_by_employee(query.employee_id)
 

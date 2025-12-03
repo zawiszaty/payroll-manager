@@ -36,9 +36,7 @@ class GetAuditLogsByEntityHandler:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def handle(
-        self, query: GetAuditLogsByEntityQuery
-    ) -> tuple[list[AuditLogResponse], int]:
+    async def handle(self, query: GetAuditLogsByEntityQuery) -> tuple[list[AuditLogResponse], int]:
         skip = (query.page - 1) * query.limit
         read_model = AuditLogReadModel(self.session)
         return await read_model.get_by_entity(
