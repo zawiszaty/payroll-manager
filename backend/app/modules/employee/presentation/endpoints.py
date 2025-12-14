@@ -116,6 +116,7 @@ async def list_employees(
     request: Request,
     page: int = 1,
     limit: int = 100,
+    search: str | None = None,
     db: AsyncSession = Depends(get_db),
 ):
     if page < 1:
@@ -126,7 +127,7 @@ async def list_employees(
     read_model = EmployeeReadModel(db)
     handler = ListEmployeesHandler(read_model)
 
-    query = ListEmployeesQuery(page=page, limit=limit)
+    query = ListEmployeesQuery(page=page, limit=limit, search=search)
     items, total_count = await handler.handle(query)
 
     base_url = str(request.url).split("?")[0]

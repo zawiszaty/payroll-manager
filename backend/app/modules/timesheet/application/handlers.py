@@ -42,7 +42,8 @@ class CreateTimesheetHandler:
 
         return await self.service.create(
             employee_id=command.employee_id,
-            work_date=command.work_date,
+            start_date=command.start_date,
+            end_date=command.end_date,
             hours=command.hours,
             overtime_hours=command.overtime_hours,
             overtime_type=overtime_type,

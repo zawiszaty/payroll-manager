@@ -11,6 +11,7 @@ class GetEmployeeQuery:
 class ListEmployeesQuery:
     page: int = 1
     limit: int = 100
+    search: str | None = None
 
 
 @dataclass

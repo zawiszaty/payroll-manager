@@ -12,7 +12,8 @@ class TimesheetORM(Base):
 
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
     employee_id: Mapped[UUID] = mapped_column(Uuid, index=True, nullable=False)
-    work_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    start_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    end_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
 
     hours: Mapped[float] = mapped_column(Float, nullable=False)
     overtime_hours: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)

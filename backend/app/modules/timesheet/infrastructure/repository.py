@@ -28,7 +28,8 @@ class SQLAlchemyTimesheetRepository(TimesheetRepository):
         return Timesheet(
             id=orm.id,
             employee_id=orm.employee_id,
-            work_date=orm.work_date,
+            start_date=orm.start_date,
+            end_date=orm.end_date,
             time_entry=time_entry,
             project_id=orm.project_id,
             task_description=orm.task_description,
@@ -45,7 +46,8 @@ class SQLAlchemyTimesheetRepository(TimesheetRepository):
         return TimesheetORM(
             id=domain.id,
             employee_id=domain.employee_id,
-            work_date=domain.work_date,
+            start_date=domain.start_date,
+            end_date=domain.end_date,
             hours=domain.time_entry.hours,
             overtime_hours=domain.time_entry.overtime_hours,
             overtime_type=domain.time_entry.overtime_type.value
@@ -70,7 +72,8 @@ class SQLAlchemyTimesheetRepository(TimesheetRepository):
 
         if existing:
             existing.employee_id = timesheet.employee_id
-            existing.work_date = timesheet.work_date
+            existing.start_date = timesheet.start_date
+            existing.end_date = timesheet.end_date
             existing.hours = timesheet.time_entry.hours
             existing.overtime_hours = timesheet.time_entry.overtime_hours
             existing.overtime_type = (
@@ -105,7 +108,7 @@ class SQLAlchemyTimesheetRepository(TimesheetRepository):
 
     async def list_all(self) -> list[Timesheet]:
         result = await self.session.execute(
-            select(TimesheetORM).order_by(TimesheetORM.work_date.desc())
+            select(TimesheetORM).order_by(TimesheetORM.start_date.desc())
         )
         orms = result.scalars().all()
         return [self._to_domain(orm) for orm in orms]
@@ -114,7 +117,7 @@ class SQLAlchemyTimesheetRepository(TimesheetRepository):
         result = await self.session.execute(
             select(TimesheetORM)
             .where(TimesheetORM.employee_id == employee_id)
-            .order_by(TimesheetORM.work_date.desc())
+            .order_by(TimesheetORM.start_date.desc())
         )
         orms = result.scalars().all()
         return [self._to_domain(orm) for orm in orms]
@@ -126,10 +129,10 @@ class SQLAlchemyTimesheetRepository(TimesheetRepository):
             select(TimesheetORM)
             .where(
                 TimesheetORM.employee_id == employee_id,
-                TimesheetORM.work_date >= start_date,
-                TimesheetORM.work_date <= end_date,
+                TimesheetORM.start_date <= end_date,
+                TimesheetORM.end_date >= start_date,
             )
-            .order_by(TimesheetORM.work_date.asc())
+            .order_by(TimesheetORM.start_date.asc())
         )
         orms = result.scalars().all()
         return [self._to_domain(orm) for orm in orms]
@@ -138,7 +141,7 @@ class SQLAlchemyTimesheetRepository(TimesheetRepository):
         result = await self.session.execute(
             select(TimesheetORM)
             .where(TimesheetORM.status == status)
-            .order_by(TimesheetORM.work_date.desc())
+            .order_by(TimesheetORM.start_date.desc())
         )
         orms = result.scalars().all()
         return [self._to_domain(orm) for orm in orms]
@@ -154,8 +157,8 @@ class SQLAlchemyTimesheetRepository(TimesheetRepository):
                 func.sum(TimesheetORM.hours + TimesheetORM.overtime_hours).label("total_hours")
             ).where(
                 TimesheetORM.employee_id == employee_id,
-                TimesheetORM.work_date >= start_date,
-                TimesheetORM.work_date <= end_date,
+                TimesheetORM.start_date <= end_date,
+                TimesheetORM.end_date >= start_date,
                 TimesheetORM.status == TimesheetStatus.APPROVED.value,
             )
         )

@@ -16,7 +16,23 @@ async def lifespan(app: FastAPI):
     logger = logging.getLogger(__name__)
     logger.info("Starting application lifespan...")
 
+    # Initialize RabbitMQ publisher on startup
+    from app.shared.infrastructure.rabbitmq import get_rabbitmq_publisher
+
+    publisher = get_rabbitmq_publisher()
+    try:
+        await publisher.connect()
+        logger.info("RabbitMQ publisher initialized")
+    except Exception as e:
+        logger.error(f"Failed to initialize RabbitMQ publisher: {e}")
+
     yield
+
+    # Close RabbitMQ publisher on shutdown
+    try:
+        await publisher.close()
+    except Exception as e:
+        logger.error(f"Error closing RabbitMQ publisher: {e}")
 
     logger.info("Shutting down application...")
 

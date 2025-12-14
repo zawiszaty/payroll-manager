@@ -1,9 +1,9 @@
 import json
 import logging
-from typing import Any
 
 import aio_pika
-from aio_pika import Connection, ExchangeType, Message
+from aio_pika import ExchangeType, Message
+from aio_pika.abc import AbstractChannel, AbstractExchange, AbstractRobustConnection
 
 from app.config import get_settings
 
@@ -13,9 +13,9 @@ settings = get_settings()
 
 class RabbitMQPublisher:
     _instance: "RabbitMQPublisher | None" = None
-    _connection: Connection | None = None
-    _channel: Any | None = None
-    _exchange: Any | None = None
+    _connection: AbstractRobustConnection | None = None
+    _channel: AbstractChannel | None = None
+    _exchange: AbstractExchange | None = None
 
     def __new__(cls) -> "RabbitMQPublisher":
         if cls._instance is None:
@@ -50,7 +50,9 @@ class RabbitMQPublisher:
                         )
                         raise
 
-    async def publish_event(self, event_type: str, event_data: dict, module: str = None) -> None:
+    async def publish_event(
+        self, event_type: str, event_data: dict, module: str | None = None
+    ) -> None:
         try:
             if self._exchange is None:
                 logger.warning("Exchange is None, connecting...")
@@ -64,7 +66,7 @@ class RabbitMQPublisher:
             )
 
             # Auto-detect module from event type if not provided
-            # e.g., "EmployeeCreatedEvent" -> "employee.employee-created-event"
+            # e.g., "Employee dEvent" -> "employee.employee- d-event"
             if module is None:
                 # Convert camelCase to kebab-case and extract module
                 module = self._extract_module_from_event(event_type)
@@ -73,13 +75,14 @@ class RabbitMQPublisher:
             event_name = self._to_kebab_case(event_type)
             routing_key = f"event.payroll-manager.{module}.{event_name}"
 
-            await self._exchange.publish(message, routing_key=routing_key)
-            logger.debug(f"Published event: {routing_key}")
+            if self._exchange is not None:
+                await self._exchange.publish(message, routing_key=routing_key)
+                logger.info(f"Published event: {routing_key}")
         except Exception as e:
             logger.error(f"Failed to publish event {event_type}: {e}")
 
     def _extract_module_from_event(self, event_type: str) -> str:
-        """Extract module name from event type (e.g., EmployeeCreatedEvent -> employee)"""
+        """Extract module name from event type (e.g., Employee dEvent -> employee)"""
         # Common module prefixes
         if "Employee" in event_type:
             return "employee"
@@ -89,7 +92,7 @@ class RabbitMQPublisher:
             return "reporting"
         elif "Audit" in event_type:
             return "audit"
-        elif "Payroll" in event_type:
+        elif "Payroll" in event_type or "MonthEnd" in event_type:
             return "payroll"
         elif "Absence" in event_type:
             return "absence"

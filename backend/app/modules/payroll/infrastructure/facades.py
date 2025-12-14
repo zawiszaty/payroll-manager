@@ -14,6 +14,8 @@ from app.modules.absence.api.facade import AbsenceModuleFacade
 from app.modules.compensation.api.facade import CompensationModuleFacade
 from app.modules.contract.api.facade import ContractModuleFacade
 from app.modules.employee.api.facade import EmployeeModuleFacade
+from app.modules.timesheet.api.facade import TimesheetFacade
+from app.modules.timesheet.infrastructure.repository import SQLAlchemyTimesheetRepository
 from app.shared.domain.value_objects import Money
 
 
@@ -126,3 +128,28 @@ class AbsenceDataFacade:
             "deduction_amount": deduction_amount,
             "absence_days": absence_days,
         }
+
+
+class TimesheetDataFacade:
+    """
+    Internal facade for accessing Timesheet module data
+    Wraps TimesheetFacade for use in payroll calculations
+    """
+
+    def __init__(self, session: AsyncSession):
+        repository = SQLAlchemyTimesheetRepository(session)
+        self.timesheet_facade = TimesheetFacade(repository)
+
+    async def get_approved_timesheets_for_period(
+        self, employee_id: UUID, start_date: date, end_date: date
+    ) -> List[Any]:
+        """Get approved timesheets for employee in a specific period"""
+        return await self.timesheet_facade.get_approved_timesheets_in_period(
+            employee_id, start_date, end_date
+        )
+
+    async def sum_hours_in_period(
+        self, employee_id: UUID, start_date: date, end_date: date
+    ) -> float:
+        """Sum total hours worked in period"""
+        return await self.timesheet_facade.sum_hours_in_interval(employee_id, start_date, end_date)

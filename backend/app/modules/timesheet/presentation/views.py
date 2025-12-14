@@ -8,7 +8,8 @@ from app.modules.timesheet.domain.models import Timesheet
 
 class CreateTimesheetRequest(BaseModel):
     employee_id: UUID
-    work_date: date
+    start_date: date
+    end_date: date
     hours: float = Field(ge=0)
     overtime_hours: float = Field(default=0.0, ge=0)
     overtime_type: str | None = None
@@ -35,7 +36,8 @@ class RejectTimesheetRequest(BaseModel):
 class TimesheetResponse(BaseModel):
     id: UUID
     employee_id: UUID
-    work_date: date
+    start_date: date
+    end_date: date
     hours: float
     overtime_hours: float
     overtime_type: str | None
@@ -55,7 +57,8 @@ class TimesheetResponse(BaseModel):
         return cls(
             id=timesheet.id,
             employee_id=timesheet.employee_id,
-            work_date=timesheet.work_date,
+            start_date=timesheet.start_date,
+            end_date=timesheet.end_date,
             hours=timesheet.regular_hours,
             overtime_hours=timesheet.overtime_hours,
             overtime_type=timesheet.time_entry.overtime_type.value

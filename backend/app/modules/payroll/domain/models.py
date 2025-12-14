@@ -203,6 +203,9 @@ class Payroll:
         if self.status != PayrollStatus.APPROVED:
             raise ValueError(f"Cannot process payroll in {self.status} status")
 
+        if self.summary is None:
+            raise ValueError("Cannot process payroll without calculated summary")
+
         old_status = self.status
         self.status = PayrollStatus.PROCESSED
         self.processed_at = datetime.now(UTC)
@@ -227,6 +230,9 @@ class Payroll:
         """Mark the payroll as paid"""
         if self.status != PayrollStatus.PROCESSED:
             raise ValueError(f"Cannot mark payroll as paid in {self.status} status")
+
+        if self.summary is None:
+            raise ValueError("Cannot mark payroll as paid without calculated summary")
 
         old_status = self.status
         self.status = PayrollStatus.PAID

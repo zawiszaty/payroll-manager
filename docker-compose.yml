@@ -64,6 +64,7 @@ services:
       DATABASE_URL: postgresql://payroll_user:payroll_pass@postgres:5432/payroll_db
       RABBITMQ_URL: amqp://payroll:payroll@rabbitmq:5672/
       REDIS_URL: redis://redis:6379/0
+      BACKEND_CORS_ORIGINS: '["http://localhost:3000", "http://127.0.0.1:3000"]'
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s

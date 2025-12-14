@@ -91,22 +91,61 @@ class PayrollCalculationService:
             payroll.add_line(line)
 
         elif contract_type == ContractType.HOURLY.value:
-            # Calculate hours based on working days and hours per week
-            hours_per_week = contract_data.get("hours_per_week") or Decimal("40")
-            # Assuming 5 working days per week
-            total_hours = (hours_per_week / Decimal("5")) * Decimal(working_days)
+            # For hourly contracts, use actual timesheet data if available
+            timesheets = payroll_data.timesheets
 
-            amount = rate_money * total_hours
+            if timesheets:
+                # Calculate total regular hours and overtime from timesheets
+                total_regular_hours = sum(
+                    (Decimal(str(ts.hours)) for ts in timesheets), start=Decimal("0")
+                )
+                total_overtime_hours = sum(
+                    (Decimal(str(ts.overtime_hours)) for ts in timesheets), start=Decimal("0")
+                )
 
-            line = PayrollLine(
-                line_type=PayrollLineType.HOURLY_WAGE,
-                description=f"Hourly Wage - {total_hours} hours @ {rate_money}/hr",
-                quantity=total_hours,
-                rate=rate_money,
-                amount=amount,
-                reference_id=contract_id,
-            )
-            payroll.add_line(line)
+                # Add regular hours line
+                if total_regular_hours > 0:
+                    regular_amount = rate_money * total_regular_hours
+                    line = PayrollLine(
+                        line_type=PayrollLineType.HOURLY_WAGE,
+                        description=f"Hourly Wage - {total_regular_hours} hours @ {rate_money}/hr",
+                        quantity=total_regular_hours,
+                        rate=rate_money,
+                        amount=regular_amount,
+                        reference_id=contract_id,
+                    )
+                    payroll.add_line(line)
+
+                # Add overtime hours line (typically at 1.5x rate)
+                if total_overtime_hours > 0:
+                    overtime_rate = rate_money * Decimal("1.5")
+                    overtime_amount = overtime_rate * total_overtime_hours
+                    line = PayrollLine(
+                        line_type=PayrollLineType.OVERTIME,
+                        description=f"Overtime - {total_overtime_hours} hours @ {overtime_rate}/hr",
+                        quantity=total_overtime_hours,
+                        rate=overtime_rate,
+                        amount=overtime_amount,
+                        reference_id=contract_id,
+                    )
+                    payroll.add_line(line)
+            else:
+                # Fallback: Calculate hours based on working days and hours per week
+                hours_per_week = contract_data.get("hours_per_week") or Decimal("40")
+                # Assuming 5 working days per week
+                total_hours = (hours_per_week / Decimal("5")) * Decimal(working_days)
+
+                amount = rate_money * total_hours
+
+                line = PayrollLine(
+                    line_type=PayrollLineType.HOURLY_WAGE,
+                    description=f"Hourly Wage - {total_hours} hours @ {rate_money}/hr (estimated)",
+                    quantity=total_hours,
+                    rate=rate_money,
+                    amount=amount,
+                    reference_id=contract_id,
+                )
+                payroll.add_line(line)
 
     async def _add_bonus_lines(self, payroll: Payroll, payroll_data: PayrollDataCollection) -> None:
         """Add bonus lines from compensation module"""

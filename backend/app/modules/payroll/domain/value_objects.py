@@ -84,6 +84,7 @@ class PayrollDataCollection(BaseModel):
     contract_data: Dict[str, Any]  # Contract data dictionary
     bonuses: List[Any]  # List of BonusView from compensation module
     absences: List[Any]  # List of AbsenceView from absence module
+    timesheets: List[Any]  # List of TimesheetDTO from timesheet module
 
 
 class AbsenceImpact(BaseModel):

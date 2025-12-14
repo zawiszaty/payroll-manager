@@ -10,7 +10,7 @@ from app.modules.contract.domain.value_objects import ContractStatus, ContractTe
 class Contract:
     id: UUID = field(default_factory=uuid4)
     employee_id: UUID = field(default_factory=uuid4)
-    terms: ContractTerms = None
+    terms: ContractTerms | None = None
     status: ContractStatus = ContractStatus.PENDING
     version: int = 1
     cancellation_reason: Optional[str] = None
@@ -46,9 +46,11 @@ class Contract:
     def is_active_at(self, check_date: date) -> bool:
         if self.status != ContractStatus.ACTIVE:
             return False
+        if self.terms is None:
+            return False
         return self.terms.date_range.is_active_at(check_date)
 
     def is_expired_at(self, check_date: date) -> bool:
-        if self.terms.date_range.valid_to is None:
+        if self.terms is None or self.terms.date_range.valid_to is None:
             return False
         return check_date > self.terms.date_range.valid_to

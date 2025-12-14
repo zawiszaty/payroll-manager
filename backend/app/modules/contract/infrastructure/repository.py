@@ -1,3 +1,4 @@
+import logging
 from datetime import date
 from typing import List, Optional
 from uuid import UUID
@@ -9,12 +10,76 @@ from app.modules.contract.domain.models import Contract
 from app.modules.contract.domain.repository import ContractRepository
 from app.modules.contract.domain.value_objects import ContractStatus, ContractTerms
 from app.modules.contract.infrastructure.models import ContractORM
+from app.shared.domain.events import get_event_dispatcher
 from app.shared.domain.value_objects import DateRange, Money
+
+logger = logging.getLogger(__name__)
 
 
 class SQLAlchemyContractRepository(ContractRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
+        self.event_dispatcher = get_event_dispatcher()
+
+    async def _dispatch_events(self, contract: Contract, event_type: str) -> None:
+        """
+        Dispatch contract events based on the operation type.
+        Errors are logged but don't prevent the operation from succeeding.
+        """
+        from app.modules.contract.domain.events import (
+            ContractActivatedEvent,
+            ContractCanceledEvent,
+            ContractCreatedEvent,
+            ContractExpiredEvent,
+        )
+
+        try:
+            event = None
+
+            if event_type == "created":
+                event = ContractCreatedEvent(
+                    contract_id=contract.id,
+                    employee_id=contract.employee_id,
+                    contract_type=contract.terms.contract_type.value if contract.terms else "",
+                    rate_amount=contract.terms.rate.amount if contract.terms else 0,
+                    rate_currency=contract.terms.rate.currency if contract.terms else "USD",
+                    valid_from=contract.terms.date_range.valid_from
+                    if contract.terms
+                    else date.today(),
+                    valid_to=contract.terms.date_range.valid_to if contract.terms else None,
+                )
+            elif event_type == "activated":
+                event = ContractActivatedEvent(
+                    contract_id=contract.id,
+                    employee_id=contract.employee_id,
+                    contract_type=contract.terms.contract_type.value if contract.terms else "",
+                    activated_at=contract.updated_at,
+                )
+            elif event_type == "canceled":
+                event = ContractCanceledEvent(
+                    contract_id=contract.id,
+                    employee_id=contract.employee_id,
+                    contract_type=contract.terms.contract_type.value if contract.terms else "",
+                    cancellation_reason=contract.cancellation_reason or "",
+                    canceled_at=contract.canceled_at or date.today(),
+                )
+            elif event_type == "expired":
+                event = ContractExpiredEvent(
+                    contract_id=contract.id,
+                    employee_id=contract.employee_id,
+                    contract_type=contract.terms.contract_type.value if contract.terms else "",
+                    expired_at=contract.updated_at,
+                )
+
+            if event:
+                await self.event_dispatcher.dispatch(event)
+                logger.debug(f"Successfully dispatched event: {event.__class__.__name__}")
+        except Exception as e:
+            # Log the error with context but don't fail the entire operation
+            logger.error(
+                f"Failed to dispatch {event_type} event for contract {contract.id}: {e}",
+                exc_info=True,
+            )
 
     def _to_domain(self, orm: ContractORM) -> Contract:
         terms = ContractTerms(
@@ -56,11 +121,16 @@ class SQLAlchemyContractRepository(ContractRepository):
             canceled_at=contract.canceled_at,
         )
 
-    async def save(self, contract: Contract) -> Contract:
+    async def save(self, contract: Contract, event_type: str | None = None) -> Contract:
         """Save a contract to the database (add or update)."""
         orm = self._to_orm(contract)
         merged_orm = await self.session.merge(orm)
         await self.session.flush()
+
+        # Dispatch event if event_type is provided
+        if event_type:
+            await self._dispatch_events(contract, event_type)
+
         await self.session.refresh(merged_orm)
         return self._to_domain(merged_orm)
 

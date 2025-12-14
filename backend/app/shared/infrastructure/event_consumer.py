@@ -8,7 +8,7 @@ import json
 import logging
 
 import aio_pika
-from aio_pika.abc import AbstractIncomingMessage
+from aio_pika.abc import AbstractChannel, AbstractIncomingMessage, AbstractRobustConnection
 
 from app.config import get_settings
 from app.shared.infrastructure.event_registry import EventHandlerRegistry, get_event_registry
@@ -23,10 +23,10 @@ class UnifiedEventConsumer:
     Routes events to appropriate handlers based on event type.
     """
 
-    def __init__(self, registry: EventHandlerRegistry = None):
+    def __init__(self, registry: EventHandlerRegistry | None = None):
         self.registry = registry or get_event_registry()
-        self.connection = None
-        self.channel = None
+        self.connection: AbstractRobustConnection | None = None
+        self.channel: AbstractChannel | None = None
 
     async def connect(self) -> None:
         """Connect to RabbitMQ and set up queue bindings"""
@@ -61,6 +61,10 @@ class UnifiedEventConsumer:
                 routing_key = message.routing_key
 
                 # Parse routing key: event.payroll-manager.module.event-name
+                if routing_key is None:
+                    logger.warning("Routing key is None")
+                    return
+
                 parts = routing_key.split(".")
                 if len(parts) < 4:
                     logger.warning(f"Invalid routing key format: {routing_key}")
@@ -116,9 +120,18 @@ async def start_unified_consumer():
     logger.info(f"Consumer registry: {consumer.registry.list_registered_events()}")
     await consumer.connect()
 
+    # Start the payroll scheduler for month-end processing
+    from app.modules.payroll.infrastructure.scheduler import start_scheduler
+
+    await start_scheduler()
+    logger.info("Payroll scheduler started")
+
     try:
         await asyncio.Future()
     except KeyboardInterrupt:
+        from app.modules.payroll.infrastructure.scheduler import stop_scheduler
+
+        await stop_scheduler()
         await consumer.close()
 
 

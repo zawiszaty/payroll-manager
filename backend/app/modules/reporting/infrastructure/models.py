@@ -17,16 +17,16 @@ class ReportORM(Base):
 
     id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
     name = Column(String(255), nullable=False)
-    report_type = Column(
+    report_type: ReportType = Column(
         Enum(ReportType, native_enum=False, length=50),
         nullable=False,
         index=True,
     )
-    format = Column(
+    format: ReportFormat = Column(
         Enum(ReportFormat, native_enum=False, length=20),
         nullable=False,
     )
-    status = Column(
+    status: ReportStatus = Column(
         Enum(ReportStatus, native_enum=False, length=20),
         nullable=False,
         index=True,
@@ -37,7 +37,7 @@ class ReportORM(Base):
     created_at = Column(DateTime, nullable=False, default=datetime.now)
     completed_at = Column(DateTime, nullable=True)
 
-    def to_dict(self) -> dict[str, str | UUID | datetime | None]:
+    def to_dict(self) -> dict[str, str | UUID | datetime | dict | None]:
         return {
             "id": self.id,
             "name": self.name,

@@ -21,6 +21,12 @@ from app.modules.absence.application.queries import (
     ListAbsencesQuery,
 )
 from app.modules.absence.domain.entities import Absence, AbsenceBalance
+from app.modules.absence.domain.events import (
+    AbsenceApprovedEvent,
+    AbsenceCancelledEvent,
+    AbsenceCreatedEvent,
+    AbsenceRejectedEvent,
+)
 from app.modules.absence.domain.repository import (
     AbsenceBalanceRepository,
     AbsenceRepository,
@@ -69,6 +75,19 @@ class CreateAbsenceHandler:
                     f"Insufficient balance. Requested: {days_needed}, Available: {balance.remaining_days()}"
                 )
 
+        # Add domain event
+        absence._add_domain_event(
+            AbsenceCreatedEvent(
+                absence_id=absence.id,
+                employee_id=absence.employee_id,
+                absence_type=absence.absence_type.value,
+                start_date=absence.period.start_date,
+                end_date=absence.period.end_date,
+                reason=absence.reason,
+                status=absence.status.value,
+            )
+        )
+
         return await self.absence_repository.save(absence)
 
 
@@ -97,6 +116,18 @@ class ApproveAbsenceHandler:
             balance.use_days(days)
             await self.balance_repository.save(balance)
 
+        # Add domain event
+        absence._add_domain_event(
+            AbsenceApprovedEvent(
+                absence_id=absence.id,
+                employee_id=absence.employee_id,
+                absence_type=absence.absence_type.value,
+                start_date=absence.period.start_date,
+                end_date=absence.period.end_date,
+                approved_by=None,  # TODO: Get from context/command
+            )
+        )
+
         return await self.absence_repository.save(absence)
 
 
@@ -110,6 +141,19 @@ class RejectAbsenceHandler:
             raise ValueError(f"Absence {command.absence_id} not found")
 
         absence.reject()
+
+        # Add domain event
+        absence._add_domain_event(
+            AbsenceRejectedEvent(
+                absence_id=absence.id,
+                employee_id=absence.employee_id,
+                absence_type=absence.absence_type.value,
+                start_date=absence.period.start_date,
+                end_date=absence.period.end_date,
+                rejected_by=None,  # TODO: Get from context/command
+            )
+        )
+
         return await self.absence_repository.save(absence)
 
 
@@ -141,6 +185,19 @@ class CancelAbsenceHandler:
                 days = absence.calculate_days()
                 balance.return_days(days)
                 await self.balance_repository.save(balance)
+
+        # Add domain event
+        absence._add_domain_event(
+            AbsenceCancelledEvent(
+                absence_id=absence.id,
+                employee_id=absence.employee_id,
+                absence_type=absence.absence_type.value,
+                start_date=absence.period.start_date,
+                end_date=absence.period.end_date,
+                was_approved=was_approved,
+                cancelled_by=None,  # TODO: Get from context/command
+            )
+        )
 
         return await self.absence_repository.save(absence)
 

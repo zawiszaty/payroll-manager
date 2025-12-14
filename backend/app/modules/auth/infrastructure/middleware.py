@@ -19,6 +19,10 @@ class AuthContextMiddleware(BaseHTTPMiddleware):
         # Reset context for each request
         set_current_user_id(None)
 
+        # Skip auth for OPTIONS requests (CORS preflight)
+        if request.method == "OPTIONS":
+            return await call_next(request)
+
         # Try to extract user from Authorization header
         authorization: str | None = request.headers.get("Authorization")
         if authorization and authorization.startswith("Bearer "):

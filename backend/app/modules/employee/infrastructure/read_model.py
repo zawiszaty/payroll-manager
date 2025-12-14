@@ -1,7 +1,7 @@
 from typing import List, Optional, Tuple
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import Text, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -90,17 +90,33 @@ class EmployeeReadModel:
             for orm in orms
         }
 
-    async def list(self, page: int = 1, limit: int = 100) -> Tuple[List[EmployeeListView], int]:
+    async def list(
+        self, page: int = 1, limit: int = 100, search: str | None = None
+    ) -> Tuple[List[EmployeeListView], int]:
         skip = (page - 1) * limit
+
+        # Build base query with optional search filter
+        base_query = select(EmployeeORM)
+        if search:
+            # Search by ID (using TEXT cast for better UUID string matching),
+            # first name, last name, or email
+            search_term = search.strip().lower()
+            search_filter = or_(
+                cast(EmployeeORM.id, Text).ilike(f"%{search_term}%"),
+                EmployeeORM.first_name.ilike(f"%{search_term}%"),
+                EmployeeORM.last_name.ilike(f"%{search_term}%"),
+                EmployeeORM.email.ilike(f"%{search_term}%"),
+            )
+            base_query = base_query.where(search_filter)
+
         # Get total count
-        count_stmt = select(func.count()).select_from(EmployeeORM)
+        count_stmt = select(func.count()).select_from(base_query.subquery())
         count_result = await self.session.execute(count_stmt)
         total_count = count_result.scalar_one()
 
         # Get paginated items
         stmt = (
-            select(EmployeeORM)
-            .options(selectinload(EmployeeORM.statuses))
+            base_query.options(selectinload(EmployeeORM.statuses))
             .offset(skip)
             .limit(limit)
             .order_by(EmployeeORM.created_at.desc())

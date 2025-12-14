@@ -24,12 +24,14 @@ class AuthenticationService:
     @staticmethod
     def hash_password(password: str) -> str:
         """Hash a plain text password."""
-        return pwd_context.hash(password)
+        hashed: str = pwd_context.hash(password)
+        return hashed
 
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
         """Verify a password against a hash."""
-        return pwd_context.verify(plain_password, hashed_password)
+        result: bool = pwd_context.verify(plain_password, hashed_password)
+        return result
 
     async def authenticate_user(self, email: str, password: str) -> User | None:
         """Authenticate a user by email and password."""
@@ -51,14 +53,16 @@ class AuthenticationService:
         else:
             expire = datetime.now(UTC) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         to_encode.update({"exp": expire})
-        encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+        encoded_jwt: str = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
         return encoded_jwt
 
     @staticmethod
     def decode_access_token(token: str) -> dict[str, Any] | None:
         """Decode and verify a JWT access token."""
         try:
-            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            payload: dict[str, Any] = jwt.decode(
+                token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+            )
             return payload
         except JWTError:
             return None

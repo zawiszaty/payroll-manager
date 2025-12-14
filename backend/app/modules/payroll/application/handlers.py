@@ -68,10 +68,22 @@ class CalculatePayrollHandler:
         if not payroll:
             raise ValueError(f"Payroll {command.payroll_id} not found")
 
+        # Auto-calculate working days if not provided
+        from app.modules.payroll.domain.services import PayrollPeriodService
+
+        working_days = command.working_days
+        if working_days is None:
+            working_days = PayrollPeriodService.get_working_days(
+                payroll.period.start_date, payroll.period.end_date
+            )
+
         # Calculate payroll using domain service
         payroll = await self.calculation_service.calculate_payroll(
-            payroll, working_days=command.working_days
+            payroll, working_days=working_days
         )
+
+        # Automatically submit for approval after calculation
+        payroll.submit_for_approval()
 
         return await self.repository.save(payroll)
 

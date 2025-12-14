@@ -6,7 +6,7 @@ This is the public interface for inter-module communication
 
 from abc import ABC, abstractmethod
 from datetime import date
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,7 +27,7 @@ class IEmployeeModuleFacade(ABC):
         pass
 
     @abstractmethod
-    async def get_employees_by_ids(self, employee_ids: list[UUID]) -> dict[UUID, any]:
+    async def get_employees_by_ids(self, employee_ids: list[UUID]) -> dict[UUID, Any]:
         """Get multiple employees by their IDs in a single query"""
         pass
 
@@ -64,7 +64,7 @@ class EmployeeModuleFacade(IEmployeeModuleFacade):
         """Get employee details by ID"""
         return await self.read_model.get_by_id(employee_id)
 
-    async def get_employees_by_ids(self, employee_ids: list[UUID]) -> dict[UUID, any]:
+    async def get_employees_by_ids(self, employee_ids: list[UUID]) -> dict[UUID, Any]:
         """Get multiple employees by their IDs in a single query"""
         return await self.read_model.get_by_ids(employee_ids)
 

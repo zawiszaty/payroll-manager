@@ -1,9 +1,10 @@
 from datetime import date
 from decimal import Decimal
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID, uuid4
 
 from app.modules.absence.domain.value_objects import AbsenceStatus, AbsenceType
+from app.shared.domain.events import DomainEvent
 from app.shared.domain.value_objects import DateRange
 
 
@@ -25,14 +26,19 @@ class Absence:
         self.reason = reason
         self.notes = notes
         self.status = status
+        self._domain_events: List[DomainEvent] = []
 
         self._validate()
 
     def _validate(self):
+        if self.period.end_date is None:
+            raise ValueError("Absence period must have an end date")
         if self.period.start_date > self.period.end_date:
             raise ValueError("Start date must be before or equal to end date")
 
     def calculate_days(self) -> Decimal:
+        if self.period.end_date is None:
+            raise ValueError("Cannot calculate days for absence without end date")
         delta = self.period.end_date - self.period.start_date
         return Decimal(str(delta.days + 1))
 
@@ -56,6 +62,15 @@ class Absence:
 
     def overlaps_with(self, other_period: DateRange) -> bool:
         return self.period.overlaps_with(other_period)
+
+    def _add_domain_event(self, event: DomainEvent) -> None:
+        self._domain_events.append(event)
+
+    def get_domain_events(self) -> List[DomainEvent]:
+        return self._domain_events.copy()
+
+    def clear_domain_events(self) -> None:
+        self._domain_events.clear()
 
 
 class AbsenceBalance:

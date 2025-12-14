@@ -1,3 +1,4 @@
+import logging
 from datetime import date
 from typing import List, Optional, Tuple
 from uuid import UUID
@@ -15,12 +16,42 @@ from app.modules.absence.infrastructure.models import (
     AbsenceBalanceModel,
     AbsenceModel,
 )
+from app.shared.domain.events import get_event_dispatcher
 from app.shared.domain.value_objects import DateRange
+
+logger = logging.getLogger(__name__)
 
 
 class SQLAlchemyAbsenceRepository(AbsenceRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
+        self.event_dispatcher = get_event_dispatcher()
+
+    async def _dispatch_events(self, absence: Absence) -> None:
+        """
+        Dispatch all domain events for the absence.
+        Errors are logged but don't prevent the operation from succeeding.
+        """
+        events = absence.get_domain_events()
+        if not events:
+            return
+
+        try:
+            # Dispatch all events sequentially to ensure they propagate
+            for event in events:
+                try:
+                    await self.event_dispatcher.dispatch(event)
+                    logger.debug(f"Successfully dispatched event: {event.__class__.__name__}")
+                except Exception as e:
+                    # Log the error with context but don't fail the entire operation
+                    logger.error(
+                        f"Failed to dispatch event {event.__class__.__name__} "
+                        f"for absence {absence.id}: {e}",
+                        exc_info=True,
+                    )
+        finally:
+            # Always clear events even if dispatch fails to avoid re-dispatch
+            absence.clear_domain_events()
 
     def _to_domain(self, model: AbsenceModel) -> Absence:
         return Absence(
@@ -49,6 +80,8 @@ class SQLAlchemyAbsenceRepository(AbsenceRepository):
         model = self._to_model(absence)
         merged = await self.session.merge(model)
         await self.session.flush()
+        await self._dispatch_events(absence)
+        await self.session.refresh(merged)
         return self._to_domain(merged)
 
     async def get_by_id(self, absence_id: UUID) -> Optional[Absence]:

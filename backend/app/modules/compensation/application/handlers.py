@@ -20,6 +20,13 @@ from app.modules.compensation.application.queries import (
     ListBonusesQuery,
     ListRatesQuery,
 )
+from app.modules.compensation.domain.events import (
+    BonusCreatedEvent,
+    DeductionCreatedEvent,
+    OvertimeCreatedEvent,
+    RateCreatedEvent,
+    SickLeaveCreatedEvent,
+)
 from app.modules.compensation.domain.models import Bonus, Deduction, Overtime, Rate, SickLeave
 from app.modules.compensation.domain.repository import (
     BonusRepository,
@@ -36,6 +43,7 @@ from app.modules.compensation.domain.services import (
     CreateSickLeaveService,
 )
 from app.modules.compensation.infrastructure.read_model import BonusReadModel, RateReadModel
+from app.shared.domain.events import get_event_dispatcher
 
 
 class CreateRateHandler:
@@ -53,7 +61,22 @@ class CreateRateHandler:
             valid_to=command.valid_to,
             description=command.description,
         )
-        return await self.repository.save(rate)
+        saved_rate = await self.repository.save(rate)
+
+        event = RateCreatedEvent(
+            rate_id=saved_rate.id,
+            employee_id=saved_rate.employee_id,
+            rate_type=saved_rate.rate_type.value,
+            amount=saved_rate.amount.amount if saved_rate.amount else 0,
+            currency=saved_rate.amount.currency if saved_rate.amount else "USD",
+            valid_from=saved_rate.date_range.valid_from
+            if saved_rate.date_range
+            else command.valid_from,
+            valid_to=saved_rate.date_range.valid_to if saved_rate.date_range else command.valid_to,
+        )
+        await get_event_dispatcher().dispatch(event)
+
+        return saved_rate
 
 
 class GetRateHandler:
@@ -103,7 +126,19 @@ class CreateBonusHandler:
             payment_date=command.payment_date,
             description=command.description,
         )
-        return await self.repository.save(bonus)
+        saved_bonus = await self.repository.save(bonus)
+
+        event = BonusCreatedEvent(
+            bonus_id=saved_bonus.id,
+            employee_id=saved_bonus.employee_id,
+            bonus_type=saved_bonus.bonus_type.value,
+            amount=saved_bonus.amount.amount if saved_bonus.amount else 0,
+            currency=saved_bonus.amount.currency if saved_bonus.amount else "USD",
+            payment_date=saved_bonus.payment_date,
+        )
+        await get_event_dispatcher().dispatch(event)
+
+        return saved_bonus
 
 
 class GetBonusHandler:
@@ -146,7 +181,24 @@ class CreateDeductionHandler:
             valid_to=command.valid_to,
             description=command.description,
         )
-        return await self.repository.save(deduction)
+        saved_deduction = await self.repository.save(deduction)
+
+        event = DeductionCreatedEvent(
+            deduction_id=saved_deduction.id,
+            employee_id=saved_deduction.employee_id,
+            deduction_type=saved_deduction.deduction_type.value,
+            amount=saved_deduction.amount.amount if saved_deduction.amount else 0,
+            currency=saved_deduction.amount.currency if saved_deduction.amount else "USD",
+            valid_from=saved_deduction.date_range.valid_from
+            if saved_deduction.date_range
+            else command.valid_from,
+            valid_to=saved_deduction.date_range.valid_to
+            if saved_deduction.date_range
+            else command.valid_to,
+        )
+        await get_event_dispatcher().dispatch(event)
+
+        return saved_deduction
 
 
 class GetDeductionsByEmployeeHandler:
@@ -178,7 +230,23 @@ class CreateOvertimeHandler:
             valid_from=command.valid_from,
             valid_to=command.valid_to,
         )
-        return await self.repository.save(overtime)
+        saved_overtime = await self.repository.save(overtime)
+
+        event = OvertimeCreatedEvent(
+            overtime_id=saved_overtime.id,
+            employee_id=saved_overtime.employee_id,
+            multiplier=saved_overtime.rule.multiplier
+            if saved_overtime.rule
+            else command.multiplier,
+            threshold_hours=saved_overtime.rule.threshold_hours
+            if saved_overtime.rule
+            else command.threshold_hours,
+            valid_from=command.valid_from,
+            valid_to=command.valid_to,
+        )
+        await get_event_dispatcher().dispatch(event)
+
+        return saved_overtime
 
 
 class GetOvertimeByEmployeeHandler:
@@ -202,7 +270,21 @@ class CreateSickLeaveHandler:
             valid_from=command.valid_from,
             valid_to=command.valid_to,
         )
-        return await self.repository.save(sick_leave)
+        saved_sick_leave = await self.repository.save(sick_leave)
+
+        event = SickLeaveCreatedEvent(
+            sick_leave_id=saved_sick_leave.id,
+            employee_id=saved_sick_leave.employee_id,
+            percentage=saved_sick_leave.rule.percentage
+            if saved_sick_leave.rule
+            else command.percentage,
+            max_days=saved_sick_leave.rule.max_days if saved_sick_leave.rule else command.max_days,
+            valid_from=command.valid_from,
+            valid_to=command.valid_to,
+        )
+        await get_event_dispatcher().dispatch(event)
+
+        return saved_sick_leave
 
 
 class GetSickLeaveByEmployeeHandler:

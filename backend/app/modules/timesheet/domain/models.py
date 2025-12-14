@@ -11,7 +11,8 @@ from app.modules.timesheet.domain.value_objects import (
 @dataclass
 class Timesheet:
     employee_id: UUID
-    work_date: date
+    start_date: date
+    end_date: date
     time_entry: TimeEntry
     project_id: UUID | None = None
     task_description: str | None = None
@@ -23,6 +24,10 @@ class Timesheet:
     submitted_at: date | None = None
     approved_at: date | None = None
     approved_by: UUID | None = None
+
+    def __post_init__(self) -> None:
+        if self.end_date < self.start_date:
+            raise ValueError("End date must be after or equal to start date")
 
     def submit(self) -> None:
         if self.status != TimesheetStatus.DRAFT:

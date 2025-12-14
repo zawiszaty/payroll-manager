@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Optional
+from typing import Any, Optional
 
 from app.modules.employee.application.commands import (
     ChangeEmployeeStatusCommand,
@@ -72,8 +72,8 @@ class UpdateEmployeeHandler:
         if not employee:
             raise ValueError(f"Employee {command.employee_id} not found")
 
-        old_values = {}
-        new_values = {}
+        old_values: dict[str, Any] = {}
+        new_values: dict[str, Any] = {}
 
         if command.first_name is not None and command.first_name != employee.first_name:
             old_values["first_name"] = employee.first_name
@@ -196,7 +196,9 @@ class ListEmployeesHandler:
         self.read_model = read_model
 
     async def handle(self, query: ListEmployeesQuery):
-        items, total_count = await self.read_model.list(page=query.page, limit=query.limit)
+        items, total_count = await self.read_model.list(
+            page=query.page, limit=query.limit, search=query.search
+        )
         return items, total_count
 
 

@@ -1,16 +1,9 @@
-from datetime import UTC, date, datetime
+from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
-
 from app.modules.payroll.domain.value_objects import PayrollStatus
-
-
-class DomainEvent(BaseModel):
-    """Base class for all domain events"""
-
-    occurred_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+from app.shared.domain.events import DomainEvent
 
 
 class PayrollCreatedEvent(DomainEvent):
@@ -65,3 +58,12 @@ class PayrollStatusChangedEvent(DomainEvent):
     payroll_id: UUID
     old_status: PayrollStatus
     new_status: PayrollStatus
+
+
+class MonthEndEvent(DomainEvent):
+    """Event raised at the end of each month to trigger payroll calculations"""
+
+    year: int
+    month: int
+    period_start: date
+    period_end: date

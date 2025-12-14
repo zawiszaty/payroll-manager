@@ -18,7 +18,7 @@ class CreatePayrollCommand:
 @dataclass
 class CalculatePayrollCommand:
     payroll_id: UUID
-    working_days: int = 22
+    working_days: Optional[int] = None
 
 
 @dataclass

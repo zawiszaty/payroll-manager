@@ -33,6 +33,13 @@ def register_all_handlers() -> None:
 
     register_contract_audit_handlers(registry)
 
+    # Register compensation module handlers (emit audit events)
+    from app.modules.compensation.infrastructure.event_handlers import (
+        register_compensation_handlers,
+    )
+
+    register_compensation_handlers(registry)
+
     # Register audit module handlers (consume audit events)
     from app.modules.audit.infrastructure.event_handlers import register_audit_handlers
 
@@ -42,5 +49,26 @@ def register_all_handlers() -> None:
     from app.modules.reporting.infrastructure.event_handlers import register_reporting_handlers
 
     register_reporting_handlers(registry)
+
+    # Register payroll module handlers (handle month-end events)
+    from app.modules.payroll.infrastructure.event_handlers import register_payroll_handlers
+
+    register_payroll_handlers(registry)
+
+    # Register payroll audit handlers (emit audit events)
+    from app.modules.payroll.infrastructure.audit_handlers import (
+        register_payroll_audit_handlers,
+    )
+
+    register_payroll_audit_handlers(registry)
+
+    # Register absence module handlers (handle external absence requests and emit audit events)
+    from app.modules.absence.infrastructure.event_handlers import (
+        register_absence_audit_handlers,
+        register_absence_handlers,
+    )
+
+    register_absence_handlers(registry)
+    register_absence_audit_handlers(registry)
 
     logger.info(f"Total registered event types: {len(registry.list_registered_events())}")

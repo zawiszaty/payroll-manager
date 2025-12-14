@@ -16,6 +16,7 @@ from app.modules.payroll.infrastructure.facades import (
     CompensationDataFacade,
     ContractDataFacade,
     EmployeeDataFacade,
+    TimesheetDataFacade,
 )
 from app.shared.domain.value_objects import Money
 
@@ -74,6 +75,7 @@ class PayrollDataGatheringAdapter(IPayrollDataGatheringAdapter):
         self.contract_facade = ContractDataFacade(session)
         self.compensation_facade = CompensationDataFacade(session)
         self.absence_facade = AbsenceDataFacade(session)
+        self.timesheet_facade = TimesheetDataFacade(session)
 
     async def validate_payroll_eligibility(self, employee_id: UUID, check_date: date) -> bool:
         """
@@ -105,12 +107,16 @@ class PayrollDataGatheringAdapter(IPayrollDataGatheringAdapter):
         absences = await self.absence_facade.get_absences_for_period(
             employee_id, period_start, period_end
         )
+        timesheets = await self.timesheet_facade.get_approved_timesheets_for_period(
+            employee_id, period_start, period_end
+        )
 
         return PayrollDataCollection(
             employee=employee,
             contract_data=contract_data,
             bonuses=bonuses,
             absences=absences,
+            timesheets=timesheets,
         )
 
     async def calculate_absence_impact(

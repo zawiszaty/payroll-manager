@@ -1,3 +1,4 @@
+import logging
 from datetime import date
 from uuid import UUID
 
@@ -41,6 +42,7 @@ from app.modules.payroll.presentation.views import PayrollDetailView, PayrollLis
 from app.shared.infrastructure.pagination import PaginatedResponse, create_paginated_response
 
 router = APIRouter(dependencies=[Depends(get_current_active_user)])
+logger = logging.getLogger(__name__)
 
 
 class CreatePayrollRequest(BaseModel):
@@ -52,7 +54,7 @@ class CreatePayrollRequest(BaseModel):
 
 
 class CalculatePayrollRequest(BaseModel):
-    working_days: int = 22
+    working_days: int | None = None
 
 
 class ApprovePayrollRequest(BaseModel):
@@ -85,6 +87,7 @@ async def create_payroll(request: CreatePayrollRequest, db: AsyncSession = Depen
         view = await read_model.get_by_id(payroll.id)
 
         await db.commit()
+
         return view
     except ValueError as e:
         await db.rollback()
@@ -181,6 +184,7 @@ async def calculate_payroll(
         view = await read_model.get_by_id(payroll.id)
 
         await db.commit()
+
         return view
     except ValueError as e:
         await db.rollback()
@@ -204,6 +208,7 @@ async def approve_payroll(
         view = await read_model.get_by_id(payroll.id)
 
         await db.commit()
+
         return view
     except ValueError as e:
         await db.rollback()
@@ -225,6 +230,7 @@ async def process_payroll(payroll_id: UUID, db: AsyncSession = Depends(get_db)):
         view = await read_model.get_by_id(payroll.id)
 
         await db.commit()
+
         return view
     except ValueError as e:
         await db.rollback()
@@ -250,6 +256,7 @@ async def mark_payroll_as_paid(
         view = await read_model.get_by_id(payroll.id)
 
         await db.commit()
+
         return view
     except ValueError as e:
         await db.rollback()

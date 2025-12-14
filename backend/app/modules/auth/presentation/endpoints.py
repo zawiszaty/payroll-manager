@@ -59,6 +59,15 @@ async def login(
         refresh_token=refresh_token,
         token_type="bearer",
         expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        user=UserResponse(
+            id=user.id,
+            email=user.email,
+            role=user.role,
+            status=user.status,
+            full_name=user.full_name,
+            created_at=user.created_at,
+            updated_at=user.updated_at,
+        ),
     )
 
 
@@ -98,6 +107,15 @@ async def refresh_access_token(
         refresh_token=refresh_token,
         token_type="bearer",
         expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        user=UserResponse(
+            id=user.id,
+            email=user.email,
+            role=user.role,
+            status=user.status,
+            full_name=user.full_name,
+            created_at=user.created_at,
+            updated_at=user.updated_at,
+        ),
     )
 
 

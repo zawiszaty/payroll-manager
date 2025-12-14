@@ -2,6 +2,7 @@
 SQLAlchemy implementation of PayrollRepository
 """
 
+import logging
 from typing import List, Optional
 from uuid import UUID
 
@@ -13,7 +14,10 @@ from app.modules.payroll.domain.models import Payroll
 from app.modules.payroll.domain.repository import PayrollRepository
 from app.modules.payroll.domain.value_objects import PayrollLine, PayrollPeriod, PayrollSummary
 from app.modules.payroll.infrastructure.models import PayrollLineORM, PayrollORM
+from app.shared.domain.events import get_event_dispatcher
 from app.shared.domain.value_objects import Money
+
+logger = logging.getLogger(__name__)
 
 
 class SQLAlchemyPayrollRepository(PayrollRepository):
@@ -21,6 +25,33 @@ class SQLAlchemyPayrollRepository(PayrollRepository):
 
     def __init__(self, session: AsyncSession):
         self.session = session
+        self.event_dispatcher = get_event_dispatcher()
+
+    async def _dispatch_events(self, payroll: Payroll) -> None:
+        """
+        Dispatch all domain events for the payroll.
+        Errors are logged but don't prevent the operation from succeeding.
+        """
+        events = payroll.get_domain_events()
+        if not events:
+            return
+
+        try:
+            # Dispatch all events sequentially to ensure they propagate
+            for event in events:
+                try:
+                    await self.event_dispatcher.dispatch(event)
+                    logger.debug(f"Successfully dispatched event: {event.__class__.__name__}")
+                except Exception as e:
+                    # Log the error with context but don't fail the entire operation
+                    logger.error(
+                        f"Failed to dispatch event {event.__class__.__name__} "
+                        f"for payroll {payroll.id}: {e}",
+                        exc_info=True,
+                    )
+        finally:
+            # Clear events after attempting to dispatch them
+            payroll.clear_domain_events()
 
     def _to_domain(self, orm: PayrollORM) -> Payroll:
         """Convert ORM model to domain model"""
@@ -121,6 +152,9 @@ class SQLAlchemyPayrollRepository(PayrollRepository):
         orm = self._to_orm(payroll)
         merged_orm = await self.session.merge(orm)
         await self.session.flush()
+
+        # Dispatch domain events
+        await self._dispatch_events(payroll)
 
         # Re-query with eager loading to avoid lazy load issues
         stmt = (

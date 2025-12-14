@@ -190,6 +190,115 @@ tasks:
     cmds:
       - sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b ~/.local/bin
 
+  # Frontend Tasks
+  frontend-install:
+    desc: Install frontend dependencies
+    dir: frontend
+    cmds:
+      - npm install
+
+  frontend-dev:
+    desc: Start frontend development server
+    dir: frontend
+    cmds:
+      - npm run dev
+
+  frontend-build:
+    desc: Build frontend for production
+    dir: frontend
+    cmds:
+      - npm run build
+
+  frontend-test:
+    desc: Run frontend tests
+    dir: frontend
+    cmds:
+      - npm test -- --run
+
+  frontend-test-watch:
+    desc: Run frontend tests in watch mode
+    dir: frontend
+    cmds:
+      - npm test
+
+  frontend-test-ui:
+    desc: Run frontend tests with UI
+    dir: frontend
+    cmds:
+      - npm run test:ui
+
+  frontend-test-coverage:
+    desc: Run frontend tests with coverage
+    dir: frontend
+    cmds:
+      - npm run test:coverage
+
+  frontend-lint:
+    desc: Run frontend linting
+    dir: frontend
+    cmds:
+      - npm run lint
+
+  frontend-lint-fix:
+    desc: Run frontend linting and auto-fix
+    dir: frontend
+    cmds:
+      - npm run lint:fix
+
+  frontend-format:
+    desc: Format frontend code
+    dir: frontend
+    cmds:
+      - npm run format
+
+  frontend-format-check:
+    desc: Check frontend code formatting
+    dir: frontend
+    cmds:
+      - npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,css,md}"
+
+  frontend-typecheck:
+    desc: Run frontend type checking
+    dir: frontend
+    cmds:
+      - npx tsc --noEmit
+
+  frontend-clean:
+    desc: Clean frontend build artifacts
+    dir: frontend
+    cmds:
+      - rm -rf dist node_modules/.vite
+
+  # Combined Tasks
+  test-all:
+    desc: Run all tests (backend + frontend)
+    cmds:
+      - task: test-coverage
+      - task: frontend-test-coverage
+
+  lint-all:
+    desc: Run all linting (backend + frontend)
+    cmds:
+      - task: lint
+      - task: frontend-lint
+
+  format-all:
+    desc: Format all code (backend + frontend)
+    cmds:
+      - task: format
+      - task: frontend-format
+
+  check-all:
+    desc: Run all checks (lint, format, type-check, tests)
+    cmds:
+      - task: format-check
+      - task: lint
+      - task: type-check
+      - task: frontend-format-check
+      - task: frontend-lint
+      - task: frontend-typecheck
+      - task: test-all
+
   help:
     desc: Show help
     cmds:

@@ -62,7 +62,8 @@ async def create_timesheet(
 
     command = CreateTimesheetCommand(
         employee_id=request.employee_id,
-        work_date=request.work_date,
+        start_date=request.start_date,
+        end_date=request.end_date,
         hours=request.hours,
         overtime_hours=request.overtime_hours,
         overtime_type=request.overtime_type,

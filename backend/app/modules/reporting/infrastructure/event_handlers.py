@@ -73,9 +73,10 @@ class ReportingEventHandler:
 
                 # Mark as failed
                 try:
-                    report.fail(str(e))
-                    await repository.save(report)
-                    await session.commit()
+                    if report is not None:
+                        report.fail(str(e))
+                        await repository.save(report)
+                        await session.commit()
                 except Exception as update_error:
                     logger.error(f"Failed to update report status: {update_error}")
                     await session.rollback()

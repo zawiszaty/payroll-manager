@@ -6,7 +6,8 @@ from uuid import UUID
 @dataclass
 class CreateTimesheetCommand:
     employee_id: UUID
-    work_date: date
+    start_date: date
+    end_date: date
     hours: float
     overtime_hours: float = 0.0
     overtime_type: str | None = None

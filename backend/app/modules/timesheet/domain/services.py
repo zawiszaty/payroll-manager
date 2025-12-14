@@ -17,7 +17,8 @@ class CreateTimesheetService:
     async def create(
         self,
         employee_id: UUID,
-        work_date: date,
+        start_date: date,
+        end_date: date,
         hours: float,
         overtime_hours: float = 0.0,
         overtime_type: OvertimeType | None = None,
@@ -30,7 +31,8 @@ class CreateTimesheetService:
 
         timesheet = Timesheet(
             employee_id=employee_id,
-            work_date=work_date,
+            start_date=start_date,
+            end_date=end_date,
             time_entry=time_entry,
             project_id=project_id,
             task_description=task_description,

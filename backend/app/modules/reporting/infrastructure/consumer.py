@@ -3,7 +3,7 @@ import json
 import logging
 
 import aio_pika
-from aio_pika.abc import AbstractIncomingMessage
+from aio_pika.abc import AbstractChannel, AbstractIncomingMessage, AbstractRobustConnection
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from app.config import get_settings
@@ -20,8 +20,8 @@ settings = get_settings()
 class ReportGenerationConsumer:
     def __init__(self, session_factory: async_sessionmaker = AsyncSessionLocal):
         self.session_factory = session_factory
-        self.connection = None
-        self.channel = None
+        self.connection: AbstractRobustConnection | None = None
+        self.channel: AbstractChannel | None = None
         self.generator_factory = ReportGeneratorFactory()
 
     async def connect(self) -> None:
@@ -54,6 +54,10 @@ class ReportGenerationConsumer:
 
                 # Parse routing key: event.payroll-manager.reporting.event-name
                 # Convert kebab-case event name to PascalCase for backward compatibility
+                if routing_key is None:
+                    logger.warning("Routing key is None")
+                    return
+
                 parts = routing_key.split(".")
                 if len(parts) >= 4:
                     event_name_kebab = ".".join(parts[3:])
