@@ -2,31 +2,92 @@
 
 [![codecov](https://codecov.io/gh/zawiszaty/payroll-manager/graph/badge.svg?token=AI8Z9KRF3R)](https://codecov.io/gh/zawiszaty/payroll-manager)
 
-A comprehensive payroll management system built with Domain-Driven Design (DDD) architecture, featuring modular bounded contexts for employee management, contracts, compensation, and more.
+A comprehensive payroll management system built with Domain-Driven Design (DDD) and Event-Driven Architecture, featuring modular bounded contexts for employee management, contracts, compensation, timesheets, and payroll processing. Designed for scalability, auditability, and integration with external HR systems.
 
 ## Overview
 
 Payroll Manager is a modern, scalable solution for managing employee data, contracts, compensation structures, and payroll processing. Built with Python 3.14, FastAPI, and PostgreSQL, it follows clean architecture principles and CQRS patterns for maintainability and extensibility.
 
+## Project Structure
+
+```
+payroll-manager/
+├── backend/                    # Python backend application
+│   ├── app/
+│   │   ├── modules/           # Bounded contexts (DDD modules)
+│   │   │   ├── employee/      # Employee management
+│   │   │   ├── contract/      # Contract lifecycle
+│   │   │   ├── compensation/  # Rates, bonuses, deductions
+│   │   │   ├── absence/       # Leave management
+│   │   │   ├── timesheet/     # Time tracking
+│   │   │   ├── payroll/       # Payroll processing
+│   │   │   ├── reporting/     # Report generation
+│   │   │   ├── audit/         # Audit logging
+│   │   │   └── auth/          # Authentication & authorization
+│   │   ├── shared/            # Shared infrastructure
+│   │   │   ├── domain/        # Base domain classes
+│   │   │   └── infrastructure/# Event bus, consumers, RabbitMQ
+│   │   ├── api/               # API versioning and routing
+│   │   ├── database.py        # Database configuration
+│   │   ├── config.py          # Application settings
+│   │   └── main.py            # FastAPI application entry point
+│   ├── migrations/            # Alembic database migrations
+│   ├── scripts/               # Utility scripts
+│   ├── tests/                 # Integration tests
+│   └── requirements.txt       # Python dependencies
+├── frontend/                  # React TypeScript frontend
+│   ├── src/
+│   │   ├── features/          # Feature modules (by domain)
+│   │   │   ├── employees/
+│   │   │   ├── contracts/
+│   │   │   ├── compensation/
+│   │   │   ├── absences/
+│   │   │   ├── timesheets/
+│   │   │   ├── payroll/
+│   │   │   ├── reporting/
+│   │   │   └── auth/
+│   │   ├── components/        # Shared UI components
+│   │   │   ├── ui/           # shadcn/ui components
+│   │   │   ├── layout/       # Layout components
+│   │   │   └── common/       # Reusable components
+│   │   ├── api/              # API client and endpoints
+│   │   ├── routes/           # React Router configuration
+│   │   └── test/             # Test utilities
+│   └── package.json
+├── scripts/                   # Project-level scripts
+├── docker-compose.yml         # Docker services configuration
+├── Taskfile.yml              # Task automation (task runner)
+└── README.md                 # This file
+```
+
 ## Features
 
 ### Implemented Modules
 
-- **Employee Management** - Complete employee lifecycle with status tracking
-- **Contract Management** - Multiple contract types with lifecycle operations
-- **Compensation Management** - Rates, bonuses, deductions, overtime, and sick leave
-- **Absence Management** - Leave requests, absence tracking, and balance management
+- **Employee Management** - Complete employee lifecycle with status tracking and employment history
+- **Contract Management** - Multiple contract types (fixed salary, hourly, B2B, task-based, commission) with versioning and lifecycle operations
+- **Compensation Management** - Rates, bonuses, deductions, overtime, and sick leave with historical tracking
+- **Absence Management** - Leave requests, absence tracking, balance management, and approval workflows
+- **Timesheet Management** - Time tracking, overtime calculation, approval workflows, and hours summaries
+- **Payroll Processing** - Automated payroll calculation supporting multiple contract types, monthly/weekly/bi-weekly cycles
+- **Reporting** - Payroll summaries, employee cost reports, month-to-month comparisons with CSV/PDF exports
+- **Audit Logging** - Complete audit trail for all entity changes with who/what/when tracking
+- **Authentication & Authorization** - JWT-based auth with role-based access control (Admin, HR, Payroll Specialist)
 
 ### Key Capabilities
 
--  RESTful API with automatic OpenAPI documentation
--  Async/await throughout for high performance
--  PostgreSQL with full ACID compliance
--  Message queue integration (RabbitMQ) for event-driven architecture
--  Redis caching support
--  Comprehensive test coverage (100% on all modules)
--  Database migrations with Alembic
--  Docker-based development environment
+- **RESTful API** with automatic OpenAPI documentation (Swagger/ReDoc)
+- **Async/await** throughout for high performance
+- **PostgreSQL** with full ACID compliance and optimized indexes
+- **Event-Driven Architecture** using RabbitMQ for module communication
+- **Redis caching** for improved query performance
+- **Comprehensive test coverage** - 100% coverage on all modules
+- **Database migrations** with Alembic for version control
+- **Docker-based development** environment with hot-reload
+- **JWT Authentication** with refresh tokens and role-based access control
+- **Audit logging** for all entity changes (who, what, when)
+- **Type safety** - Full type hints (Python) and TypeScript (frontend)
+- **Scheduler** for automated tasks (contract expiration, payroll runs)
 
 ## Technology Stack
 
@@ -37,6 +98,18 @@ Payroll Manager is a modern, scalable solution for managing employee data, contr
 - **PostgreSQL** - Primary database
 - **Alembic** - Database migrations
 - **Pydantic V2** - Data validation and settings
+
+### Frontend
+- **React 18** - UI framework with hooks
+- **TypeScript** - Type-safe JavaScript
+- **Vite** - Fast build tool and dev server
+- **React Router** - Client-side routing
+- **TanStack Query** - Data fetching and caching
+- **Axios** - HTTP client
+- **Tailwind CSS** - Utility-first CSS framework
+- **shadcn/ui** - Re-usable component library
+- **Vitest** - Unit testing framework
+- **Testing Library** - React component testing
 
 ### Infrastructure
 - **Docker & Docker Compose** - Containerization
@@ -51,28 +124,192 @@ Payroll Manager is a modern, scalable solution for managing employee data, contr
 
 ## Architecture
 
-The project follows **Domain-Driven Design (DDD)** with clear separation of concerns:
+The project follows **Domain-Driven Design (DDD)** with **Event-Driven Architecture** and clear separation of concerns using **Bounded Contexts**.
+
+### Architectural Patterns
+
+- **Domain-Driven Design (DDD)** - Business logic isolated in domain layer
+- **CQRS (Command Query Responsibility Segregation)** - Separate read and write models
+- **Event-Driven Architecture** - Asynchronous communication between modules via domain events
+- **Repository Pattern** - Data access abstraction
+- **Facade Pattern** - Clean module boundaries and inter-module communication
+- **Hexagonal Architecture** - Domain independent from infrastructure
+
+### Module Structure (Bounded Contexts)
+
+Each module is a separate bounded context with its own domain model:
 
 ```
 app/modules/{module}/
-     domain/              # Business logic (pure Python)
-         models.py       # Entities and aggregates
-         value_objects.py
-         repository.py   # Abstract interfaces
-         services.py     # Domain services
-    infrastructure/      # Technical implementations
-        models.py       # ORM models
-        repository.py   # Repository implementations
-    application/         # Use cases (CQRS)
-        commands.py
-        queries.py
-        handlers.py
-    api/                 # HTTP layer
-        endpoints.py
-    tests/               # Module-specific tests
+    domain/                      # Business logic (pure Python)
+        models.py               # Entities and aggregates
+        value_objects.py        # Value objects (immutable)
+        repository.py           # Abstract repository interfaces
+        services.py             # Domain services
+        events.py               # Domain events
+    infrastructure/              # Technical implementations
+        models.py               # ORM models (SQLAlchemy)
+        repository.py           # Repository implementations
+        read_model.py           # Query/read model for CQRS
+        event_handlers.py       # Domain event handlers
+        adapters.py             # External service adapters
+    application/                 # Use cases (CQRS)
+        commands.py             # Write operations
+        queries.py              # Read operations
+        handlers.py             # Command/query handlers
+    api/                         # API layer
+        facade.py               # Public API for other modules
+    presentation/                # HTTP layer
+        endpoints.py            # FastAPI routes
+        views.py                # Response models
+    tests/                       # Module-specific tests
         test_domain.py
         test_api.py
 ```
+
+### Domain Events and Event-Driven Communication
+
+Modules communicate asynchronously through **Domain Events** published to **RabbitMQ**:
+
+#### Core Domain Events
+
+**Employee Module:**
+- `EmployeeCreated` - New employee added
+- `EmployeeUpdated` - Employee data changed
+- `EmployeeStatusChanged` - Employment status modified
+
+**Contract Module:**
+- `ContractCreated` - New contract created
+- `ContractUpdated` - Contract terms modified
+- `ContractExpired` - Contract reached end date (auto-scheduled)
+- `ContractCanceled` - Contract terminated early
+
+**Absence Module:**
+- `AbsenceRequested` - New absence request (from external systems)
+- `AbsenceApproved` - Absence request approved
+- `AbsenceRejected` - Absence request rejected
+- `AbsenceBalanceUpdated` - Balance changed
+
+**Compensation Module:**
+- `RateCreated` - New compensation rate added
+- `RateUpdated` - Rate modified
+- `BonusCreated` - Bonus added
+
+**Timesheet Module:**
+- `TimesheetCreated` - New timesheet entry
+- `TimesheetApproved` - Timesheet approved
+- `TimesheetRejected` - Timesheet rejected
+
+**Payroll Module:**
+- `PayrollCalculated` - Payroll run completed
+- `PayrollApproved` - Payroll approved for payment
+- `PayrollPaid` - Payroll marked as paid
+
+**Audit Module:**
+- `AuditLogCreated` - Entity change recorded
+
+#### Event Flow Architecture
+
+```
+┌─────────────┐         ┌──────────────┐         ┌─────────────┐
+│   Domain    │────────>│   RabbitMQ   │────────>│   Event     │
+│   Module    │ Publish │   Exchange   │ Consume │  Consumer   │
+└─────────────┘         └──────────────┘         └─────────────┘
+                                                          │
+                                                          ▼
+                                                  ┌───────────────┐
+                                                  │Event Registry │
+                                                  │   Handlers    │
+                                                  └───────────────┘
+```
+
+The system uses a **Unified Event Consumer** that:
+1. Listens to all event queues from RabbitMQ
+2. Routes events to registered handlers via the Event Registry
+3. Enables loose coupling between modules
+4. Supports external system integration (HR systems, time tracking tools)
+
+### Inter-Module Communication
+
+Modules never directly import domain objects from other modules. Instead, they:
+
+1. **Facade Pattern** - Use public facades (e.g., `EmployeeApiFacade`) for synchronous queries
+2. **Domain Events** - Publish events for asynchronous operations
+3. **Anti-Corruption Layer** - Adapters translate between module contexts
+
+### Scheduled Tasks
+
+The system includes background schedulers for:
+
+- **Contract Expiration** - Auto-expires contracts when `valid_to` date is reached
+- **Month-End Processing** - Automated payroll calculations (configurable)
+- **Report Generation** - Scheduled report creation
+
+### Data Flow Example: Creating a Payroll
+
+Here's how the system processes a payroll calculation through multiple bounded contexts:
+
+```
+1. API Request (Frontend/Client)
+   └─> POST /api/v1/payroll/ {employee_id, period}
+
+2. Application Layer (CQRS Command)
+   └─> CreatePayrollCommand
+       └─> CreatePayrollHandler
+           ├─> Fetch employee via EmployeeApiFacade
+           ├─> Fetch active contract via ContractApiFacade
+           ├─> Fetch rates via CompensationApiFacade
+           ├─> Fetch absences via AbsenceApiFacade
+           ├─> Fetch timesheets via TimesheetApiFacade
+           └─> Domain Service: PayrollCalculationService
+               └─> Calculate gross/net, deductions, bonuses
+
+3. Domain Layer
+   └─> Payroll aggregate created
+       └─> Emits: PayrollCalculated event
+
+4. Infrastructure Layer
+   ├─> Save to database (Repository)
+   └─> Publish event to RabbitMQ
+
+5. Event Consumer
+   └─> Receives PayrollCalculated event
+       └─> AuditLogHandler creates audit entry
+       └─> ReportingHandler updates statistics
+```
+
+### Data Consistency and Transactions
+
+- **Within Module** - ACID transactions via PostgreSQL
+- **Cross-Module** - Eventual consistency via domain events
+- **Compensating Actions** - Events can trigger rollback workflows
+- **Idempotency** - Event handlers designed to be idempotent
+- **Retry Logic** - Failed events automatically retried by RabbitMQ
+
+### Key Design Decisions
+
+**Immutable History**
+- Contracts are never updated in place - new versions created instead
+- Rates maintain historical records with validity periods
+- Employment status changes tracked with date ranges
+- Enables accurate historical payroll recalculation
+
+**Eventual Consistency**
+- Modules loosely coupled through events
+- Enables independent scaling and deployment
+- Audit logs created asynchronously
+- Trade-off: slight delay in cross-module data propagation
+
+**No Cascading Deletes**
+- Entities marked as inactive/canceled rather than deleted
+- Preserves audit trail and historical accuracy
+- Enables compliance and regulatory reporting
+
+**Read Models (CQRS)**
+- Separate optimized read models for queries
+- Write operations use domain models
+- Improves query performance for complex reports
+- Simplifies API response formatting
 
 ## Getting Started
 
@@ -115,6 +352,15 @@ app/modules/{module}/
 5. **Access the API documentation**
    - Swagger UI: http://localhost:8000/docs
    - ReDoc: http://localhost:8000/redoc
+
+6. **Start the frontend (optional)**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+   The frontend will be available at http://localhost:5173
 
 ### Login Credentials
 
@@ -159,30 +405,62 @@ task down            # Stop all services
 task restart         # Restart all services
 task logs            # View logs from all services
 task logs-backend    # View backend logs only
+task ps              # Show running containers
+task health          # Check service health
 
 # Database
 task db-shell        # Open PostgreSQL shell
 task migrate         # Run migrations
+task migrate-create  # Create new migration
 task reset-db        # Reset database (drops all data)
 
-# Testing
-task test                  # Run all tests
+# Backend Testing
+task test                  # Run all backend tests
 task test-employee         # Run employee module tests
 task test-contract         # Run contract module tests
 task test-compensation     # Run compensation module tests
 task test-absence          # Run absence module tests
+task test-timesheet        # Run timesheet module tests
+task test-reporting        # Run reporting module tests
 task test-coverage         # Run tests with coverage report
 
-# Code Quality
+# Backend Code Quality
 task lint            # Run linting
 task lint-fix        # Auto-fix linting issues
 task format          # Format code
+task format-check    # Check code formatting
 task type-check      # Run type checking
+
+# Frontend Development
+task frontend-install      # Install frontend dependencies
+task frontend-dev          # Start frontend dev server (http://localhost:5173)
+task frontend-build        # Build frontend for production
+
+# Frontend Testing
+task frontend-test                # Run frontend tests
+task frontend-test-watch          # Run frontend tests in watch mode
+task frontend-test-ui             # Run frontend tests with UI
+task frontend-test-coverage       # Run frontend tests with coverage
+
+# Frontend Code Quality
+task frontend-lint             # Run frontend linting
+task frontend-lint-fix         # Auto-fix frontend linting issues
+task frontend-format           # Format frontend code
+task frontend-format-check     # Check frontend code formatting
+task frontend-typecheck        # Run frontend type checking
+
+# Combined Tasks
+task test-all        # Run all tests (backend + frontend)
+task lint-all        # Run all linting (backend + frontend)
+task format-all      # Format all code (backend + frontend)
+task check-all       # Run all checks (lint, format, type-check, tests)
+task ci              # Run full CI pipeline locally (backend + frontend)
+task ci-backend      # Run backend CI pipeline only
+task ci-frontend     # Run frontend CI pipeline only
 
 # Utilities
 task shell           # Open shell in backend container
-task health          # Check service health
-task ps              # Show running containers
+task api-docs        # Open API documentation in browser
 ```
 
 ### Running Tests
@@ -273,10 +551,69 @@ BACKEND_CORS_ORIGINS=["http://localhost:3000"]
 ### Service Ports
 
 - **Backend API**: http://localhost:8000
-- **API Docs**: http://localhost:8000/docs
+- **API Docs (Swagger)**: http://localhost:8000/docs
+- **API Docs (ReDoc)**: http://localhost:8000/redoc
+- **Frontend**: http://localhost:5173 (development mode)
 - **PostgreSQL**: localhost:5432
-- **RabbitMQ Management**: http://localhost:15672 (guest/guest)
+- **RabbitMQ Management**: http://localhost:15672 (username: `payroll`, password: `payroll`)
 - **Redis**: localhost:6379
+
+### Running Services
+
+The Docker Compose setup includes the following services:
+
+1. **postgres** - PostgreSQL database
+2. **rabbitmq** - RabbitMQ message broker with management UI
+3. **redis** - Redis cache
+4. **backend** - FastAPI application server
+5. **event_consumer** - Dedicated event consumer service for processing domain events
+
+The event consumer runs as a separate container to ensure event processing continues independently of the main API service.
+
+## Security
+
+### Authentication & Authorization
+
+**Authentication:**
+- **JWT (JSON Web Tokens)** - Stateless authentication
+- **Access Tokens** - Short-lived (configurable expiration)
+- **Refresh Tokens** - Long-lived tokens for obtaining new access tokens
+- **Password Hashing** - bcrypt for secure password storage
+- **Token Blacklisting** - Support for token revocation
+
+**Authorization (RBAC):**
+- **Admin** - Full system access, user management, configuration
+- **HR** - Employee management, contract operations, absence approval
+- **Payroll Specialist** - Payroll processing, compensation management, reporting
+- **Read-Only Roles** - View-only access for auditors
+
+**API Security:**
+- **CORS** - Configurable allowed origins
+- **Rate Limiting** - Prevent abuse (configurable)
+- **Input Validation** - Pydantic models for request validation
+- **SQL Injection Prevention** - ORM-based queries (SQLAlchemy)
+- **XSS Protection** - Response sanitization
+
+**Development vs Production:**
+- Default credentials provided for development only
+- Environment-based configuration
+- Secret key rotation supported
+- Database credentials isolated per environment
+
+### Creating Users
+
+Create users via CLI:
+
+```bash
+# Create admin user
+docker exec -it payroll_backend python -m app.modules.auth.presentation.cli create admin@company.com --password securepass123 --role admin --full-name "Admin User"
+
+# Create HR user
+docker exec -it payroll_backend python -m app.modules.auth.presentation.cli create hr@company.com --password hrpass123 --role hr --full-name "HR Manager"
+
+# Create payroll specialist
+docker exec -it payroll_backend python -m app.modules.auth.presentation.cli create payroll@company.com --password payrollpass123 --role payroll_specialist --full-name "Payroll User"
+```
 
 ## Testing
 
@@ -833,14 +1170,111 @@ task test
 chmod +x backend/entrypoint.sh
 ```
 
+## Production Considerations
+
+### Performance Optimization
+
+**Database:**
+- Indexes on frequently queried fields (employee_id, date ranges, status)
+- Connection pooling configured (SQLAlchemy async)
+- Query optimization for complex reports
+- Pagination for all list endpoints
+
+**Caching:**
+- Redis for frequently accessed data
+- Employee and contract lookups cached
+- Cache invalidation on entity updates
+- Configurable TTL per cache type
+
+**API Performance:**
+- Async/await throughout the stack
+- Database queries optimized with eager loading
+- Bulk operations for batch processing
+- Background tasks for long-running operations
+
+### Monitoring & Observability
+
+**Logging:**
+- Structured logging (JSON format in production)
+- Log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+- Request/response logging
+- Event processing logs
+
+**Health Checks:**
+- `/health` endpoint for service health
+- Database connectivity check
+- RabbitMQ connectivity check
+- Redis connectivity check
+
+**Metrics to Monitor:**
+- API response times
+- Event processing lag
+- Database connection pool usage
+- RabbitMQ queue depths
+- Memory and CPU usage per service
+
+### Deployment
+
+**Environment Variables:**
+- All secrets via environment variables
+- No hardcoded credentials
+- Database URLs per environment
+- CORS origins per environment
+
+**Scaling:**
+- Backend API - Horizontal scaling (stateless)
+- Event Consumer - Multiple instances supported
+- Database - Read replicas for reporting
+- RabbitMQ - Clustered setup for HA
+
+**Backup & Recovery:**
+- Regular PostgreSQL backups
+- Transaction logs for point-in-time recovery
+- Event replay capability via RabbitMQ
+- Audit logs for compliance
+
+### CI/CD Pipeline
+
+The project includes GitHub Actions workflows for:
+
+- **Backend CI** - Linting, type checking, testing, coverage
+- **Frontend CI** - Linting, type checking, testing, build
+- **Code Coverage** - Codecov integration (badge above)
+- **Docker Builds** - Automated container builds
+
+Run CI locally before pushing:
+
+```bash
+# Full CI pipeline
+task ci
+
+# Backend only
+task ci-backend
+
+# Frontend only
+task ci-frontend
+```
+
 ## Contributing
 
-1. Follow the existing DDD architecture
-2. Write tests for all new features
-3. Ensure all tests pass: `task test`
-4. Run linting: `task lint`
-5. Format code: `task format`
-6. Update documentation as needed
+1. **Follow the DDD architecture** - Maintain bounded context isolation
+2. **Write comprehensive tests** - Aim for 100% coverage on new code
+3. **Use conventional commits** - `feat:`, `fix:`, `docs:`, `refactor:`, etc.
+4. **Run CI checks** before pushing: `task check-all`
+5. **Update documentation** - Keep README and inline docs current
+6. **Add audit logging** - Ensure all entity changes are auditable
+7. **Follow coding standards** - Backend (no comments, type hints) / Frontend (TypeScript, 80% coverage)
+
+### Pull Request Checklist
+
+- [ ] Tests added and passing (`task test-all`)
+- [ ] Code formatted (`task format-all`)
+- [ ] Linting passed (`task lint-all`)
+- [ ] Type checking passed (`task type-check` and `task frontend-typecheck`)
+- [ ] Documentation updated
+- [ ] Migration created if schema changed (`task migrate-create`)
+- [ ] Audit logging added for entity changes
+- [ ] Frontend tests include audit integration
 
 ## License
 
