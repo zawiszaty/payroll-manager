@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import type { AuditLogResponse } from '@/lib/api'
+import type { AuditLogResponse } from '@/api'
 
 interface AuditHistoryProps {
   auditLogs: AuditLogResponse[]

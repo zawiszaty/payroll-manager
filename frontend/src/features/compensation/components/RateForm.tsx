@@ -21,7 +21,7 @@ import type {
   PaginatedResponse_EmployeeListView_,
   EmployeeListView,
   RateType,
-} from '@/lib/api'
+} from '@/api'
 
 const RATE_TYPES = [
   { value: 'base_salary', label: 'Base Salary' },

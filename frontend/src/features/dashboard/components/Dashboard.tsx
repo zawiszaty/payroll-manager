@@ -8,7 +8,7 @@ import type {
   PaginatedResponse_ContractListView_,
   PaginatedResponse_AbsenceResponse_,
   AbsenceResponse,
-} from '@/lib/api'
+} from '@/api'
 
 interface DashboardStats {
   totalEmployees: number

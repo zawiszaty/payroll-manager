@@ -27,7 +27,7 @@ import {
 import { useCreatePayroll } from '../hooks/usePayroll'
 import { PayrollPeriodType } from '../types'
 import apiClient from '@/api/client'
-import type { PaginatedResponse_EmployeeListView_, EmployeeListView } from '@/lib/api'
+import type { PaginatedResponse_EmployeeListView_, EmployeeListView } from '@/api'
 
 const payrollSchema = z
   .object({

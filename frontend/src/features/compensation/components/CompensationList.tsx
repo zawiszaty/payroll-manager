@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { compensationApi } from '@/api/compensation'
 import apiClient from '@/api/client'
-import type { RateView, BonusView, EmployeeListView } from '@/lib/api'
+import type { RateView, BonusView, EmployeeListView } from '@/api'
 
 interface RateWithEmployee extends RateView {
   employee_name?: string

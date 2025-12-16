@@ -20,7 +20,7 @@ import { contractsApi } from '@/api/contracts'
 import { auditApi } from '@/api/audit'
 import apiClient from '@/api/client'
 import { AuditHistory } from '@/components/common/AuditHistory'
-import type { ContractDetailView, EmployeeDetailView, AuditLogResponse } from '@/lib/api'
+import type { ContractDetailView, EmployeeDetailView, AuditLogResponse } from '@/api'
 
 const CONTRACT_TYPE_LABELS: Record<string, string> = {
   fixed_monthly: 'Fixed Monthly',

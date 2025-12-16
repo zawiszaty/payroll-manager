@@ -5,7 +5,7 @@ import type {
   CancelContractRequest,
   PaginatedResponse_ContractListView_,
   ContractListResponse,
-} from '@/lib/api'
+} from '@/api'
 
 /**
  * Contracts API endpoints

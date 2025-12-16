@@ -16,7 +16,7 @@ import { Plus, AlertCircle, FileText, Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { contractsApi } from '@/api/contracts'
 import apiClient from '@/api/client'
-import type { ContractListView, EmployeeListView } from '@/lib/api'
+import type { ContractListView, EmployeeListView } from '@/api'
 
 const CONTRACT_TYPE_LABELS: Record<string, string> = {
   fixed_monthly: 'Fixed Monthly',

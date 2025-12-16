@@ -1,7 +1,7 @@
 import apiClient from './client'
-import type { ReportListResponse, ReportResponse, CreateReportRequest } from '@/lib/api'
+import type { ReportListResponse, ReportResponse, CreateReportRequest } from '@/api'
 
-export type { ReportResponse, CreateReportRequest } from '@/lib/api'
+export type { ReportResponse, CreateReportRequest } from '@/api'
 
 export const reportsApi = {
   list: async (): Promise<ReportListResponse> => {

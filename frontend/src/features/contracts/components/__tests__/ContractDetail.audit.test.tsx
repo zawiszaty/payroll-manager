@@ -5,8 +5,8 @@ import { ContractDetail } from '../ContractDetail'
 import { contractsApi } from '@/api/contracts'
 import { auditApi } from '@/api/audit'
 import apiClient from '@/api/client'
-import type { ContractDetailView, EmployeeDetailView, AuditLogResponse } from '@/lib/api'
-import { ContractStatus, ContractType } from '@/lib/api'
+import type { ContractDetailView, EmployeeDetailView, AuditLogResponse } from '@/api'
+import { ContractStatus, ContractType } from '@/api'
 
 vi.mock('@/api/contracts')
 vi.mock('@/api/audit')

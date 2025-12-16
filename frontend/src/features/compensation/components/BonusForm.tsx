@@ -21,7 +21,7 @@ import type {
   PaginatedResponse_EmployeeListView_,
   EmployeeListView,
   BonusType,
-} from '@/lib/api'
+} from '@/api'
 
 const BONUS_TYPES = [
   { value: 'performance', label: 'Performance' },

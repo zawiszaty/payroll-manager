@@ -9,7 +9,7 @@ import { compensationApi } from '@/api/compensation'
 import { auditApi } from '@/api/audit'
 import { AuditHistory } from '@/components/common/AuditHistory'
 import apiClient from '@/api/client'
-import type { RateView, EmployeeListView, AuditLogResponse } from '@/lib/api'
+import type { RateView, EmployeeListView, AuditLogResponse } from '@/api'
 
 export function RateDetail() {
   const { id } = useParams<{ id: string }>()

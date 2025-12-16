@@ -9,7 +9,7 @@ import { compensationApi } from '@/api/compensation'
 import { auditApi } from '@/api/audit'
 import { AuditHistory } from '@/components/common/AuditHistory'
 import apiClient from '@/api/client'
-import type { BonusView, EmployeeListView, AuditLogResponse } from '@/lib/api'
+import type { BonusView, EmployeeListView, AuditLogResponse } from '@/api'
 
 export function BonusDetail() {
   const { id } = useParams<{ id: string }>()

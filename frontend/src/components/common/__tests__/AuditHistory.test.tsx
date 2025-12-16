@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import { AuditHistory } from '../AuditHistory'
-import type { AuditLogResponse } from '@/lib/api'
+import type { AuditLogResponse } from '@/api'
 
 describe('AuditHistory', () => {
   const mockAuditLogs: AuditLogResponse[] = [

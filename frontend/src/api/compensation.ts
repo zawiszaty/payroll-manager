@@ -8,7 +8,7 @@ import type {
   PaginatedResponse_BonusView_,
   RateListResponse,
   BonusListResponse,
-} from '@/lib/api'
+} from '@/api'
 
 export const compensationApi = {
   rates: {

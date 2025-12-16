@@ -1,7 +1,7 @@
 import apiClient from './client'
-import type { AuditLogListResponse, AuditLogResponse } from '@/lib/api'
+import type { AuditLogListResponse, AuditLogResponse } from '@/api'
 
-export type { AuditLogResponse } from '@/lib/api'
+export type { AuditLogResponse } from '@/api'
 
 export const auditApi = {
   list: async (params?: {

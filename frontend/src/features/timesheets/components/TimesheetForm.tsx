@@ -27,7 +27,7 @@ import {
 import { useTimesheet, useCreateTimesheet, useUpdateTimesheet } from '../hooks/useTimesheets'
 import { OvertimeType } from '../types'
 import apiClient from '@/api/client'
-import type { PaginatedResponse_EmployeeListView_, EmployeeListView } from '@/lib/api'
+import type { PaginatedResponse_EmployeeListView_, EmployeeListView } from '@/api'
 
 const timesheetSchema = z
   .object({

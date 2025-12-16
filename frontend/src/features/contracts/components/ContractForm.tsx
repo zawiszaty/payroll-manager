@@ -21,7 +21,7 @@ import type {
   PaginatedResponse_EmployeeListView_,
   EmployeeListView,
   ContractType,
-} from '@/lib/api'
+} from '@/api'
 
 const CONTRACT_TYPES = [
   { value: 'fixed_monthly', label: 'Fixed Monthly' },
