@@ -131,7 +131,7 @@ export function TimesheetForm() {
       const updatePayload = {
         hours: data.hours,
         overtime_hours: data.overtime_hours,
-        overtime_type: data.overtime_type || null,
+        overtime_type: data.overtime_type ? (data.overtime_type as OvertimeType) : null,
         project_id: data.project_id || null,
         task_description: data.task_description || null,
       }

@@ -269,6 +269,31 @@ tasks:
     cmds:
       - rm -rf dist node_modules/.vite
 
+  ci-backend:
+    desc: Run CI
+    cmds:
+      - task: format-check
+      - task: lint
+      - task: type-check
+      - task: test-coverage
+
+  ci-frontend:
+    desc: Run frontend CI pipeline locally (mirrors GitHub Actions)
+    dir: frontend
+    cmds:
+      - npm ci
+      - npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,css,md}"
+      - npm run lint
+      - npx tsc --noEmit
+      - npm run test:coverage
+      - npm run build
+
+  ci:
+    desc: Run full CI pipeline (backend + frontend) locally
+    cmds:
+      - task: ci-backend
+      - task: ci-frontend
+
   # Combined Tasks
   test-all:
     desc: Run all tests (backend + frontend)

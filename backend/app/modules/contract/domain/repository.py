@@ -8,7 +8,7 @@ from app.modules.contract.domain.models import Contract
 
 class ContractRepository(ABC):
     @abstractmethod
-    async def save(self, contract: Contract) -> Contract:
+    async def save(self, contract: Contract, event_type: str | None = None) -> Contract:
         pass
 
     @abstractmethod

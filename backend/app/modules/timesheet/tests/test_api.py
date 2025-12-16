@@ -8,10 +8,11 @@ from httpx import AsyncClient
 async def test_create_timesheet(client: AsyncClient):
     employee_id = uuid4()
     response = await client.post(
-        "/api/v1/timesheet/",
+        "/api/v1/timesheets/",
         json={
             "employee_id": str(employee_id),
-            "work_date": "2024-01-15",
+            "start_date": "2024-01-15",
+            "end_date": "2024-01-15",
             "hours": 8.0,
             "overtime_hours": 0.0,
             "overtime_type": None,
@@ -23,7 +24,8 @@ async def test_create_timesheet(client: AsyncClient):
     assert response.status_code == 201
     data = response.json()
     assert data["employee_id"] == str(employee_id)
-    assert data["work_date"] == "2024-01-15"
+    assert data["start_date"] == "2024-01-15"
+    assert data["end_date"] == "2024-01-15"
     assert data["hours"] == 8.0
     assert data["overtime_hours"] == 0.0
     assert data["status"] == "draft"
@@ -34,10 +36,11 @@ async def test_create_timesheet(client: AsyncClient):
 async def test_create_timesheet_with_overtime(client: AsyncClient):
     employee_id = uuid4()
     response = await client.post(
-        "/api/v1/timesheet/",
+        "/api/v1/timesheets/",
         json={
             "employee_id": str(employee_id),
-            "work_date": "2024-01-15",
+            "start_date": "2024-01-15",
+            "end_date": "2024-01-15",
             "hours": 8.0,
             "overtime_hours": 2.0,
             "overtime_type": "regular",
@@ -59,10 +62,11 @@ async def test_create_timesheet_with_overtime(client: AsyncClient):
 async def test_create_timesheet_invalid_overtime(client: AsyncClient):
     employee_id = uuid4()
     response = await client.post(
-        "/api/v1/timesheet/",
+        "/api/v1/timesheets/",
         json={
             "employee_id": str(employee_id),
-            "work_date": "2024-01-15",
+            "start_date": "2024-01-15",
+            "end_date": "2024-01-15",
             "hours": 8.0,
             "overtime_hours": 2.0,
             "overtime_type": None,
@@ -76,16 +80,17 @@ async def test_create_timesheet_invalid_overtime(client: AsyncClient):
 async def test_get_timesheet(client: AsyncClient):
     employee_id = uuid4()
     create_response = await client.post(
-        "/api/v1/timesheet/",
+        "/api/v1/timesheets/",
         json={
             "employee_id": str(employee_id),
-            "work_date": "2024-01-15",
+            "start_date": "2024-01-15",
+            "end_date": "2024-01-15",
             "hours": 8.0,
         },
     )
     timesheet_id = create_response.json()["id"]
 
-    response = await client.get(f"/api/v1/timesheet/{timesheet_id}")
+    response = await client.get(f"/api/v1/timesheets/{timesheet_id}")
 
     assert response.status_code == 200
     data = response.json()
@@ -96,7 +101,7 @@ async def test_get_timesheet(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_get_timesheet_not_found(client: AsyncClient):
     non_existent_id = uuid4()
-    response = await client.get(f"/api/v1/timesheet/{non_existent_id}")
+    response = await client.get(f"/api/v1/timesheets/{non_existent_id}")
 
     assert response.status_code == 404
 
@@ -105,23 +110,25 @@ async def test_get_timesheet_not_found(client: AsyncClient):
 async def test_list_timesheets(client: AsyncClient):
     employee_id = uuid4()
     await client.post(
-        "/api/v1/timesheet/",
+        "/api/v1/timesheets/",
         json={
             "employee_id": str(employee_id),
-            "work_date": "2024-01-15",
+            "start_date": "2024-01-15",
+            "end_date": "2024-01-15",
             "hours": 8.0,
         },
     )
     await client.post(
-        "/api/v1/timesheet/",
+        "/api/v1/timesheets/",
         json={
             "employee_id": str(employee_id),
-            "work_date": "2024-01-16",
+            "start_date": "2024-01-16",
+            "end_date": "2024-01-16",
             "hours": 7.5,
         },
     )
 
-    response = await client.get("/api/v1/timesheet/")
+    response = await client.get("/api/v1/timesheets/")
 
     assert response.status_code == 200
     data = response.json()
@@ -132,23 +139,25 @@ async def test_list_timesheets(client: AsyncClient):
 async def test_get_timesheets_by_employee(client: AsyncClient):
     employee_id = uuid4()
     await client.post(
-        "/api/v1/timesheet/",
+        "/api/v1/timesheets/",
         json={
             "employee_id": str(employee_id),
-            "work_date": "2024-01-15",
+            "start_date": "2024-01-15",
+            "end_date": "2024-01-15",
             "hours": 8.0,
         },
     )
     await client.post(
-        "/api/v1/timesheet/",
+        "/api/v1/timesheets/",
         json={
             "employee_id": str(employee_id),
-            "work_date": "2024-01-16",
+            "start_date": "2024-01-16",
+            "end_date": "2024-01-16",
             "hours": 7.5,
         },
     )
 
-    response = await client.get(f"/api/v1/timesheet/employee/{employee_id}")
+    response = await client.get(f"/api/v1/timesheets/employee/{employee_id}")
 
     assert response.status_code == 200
     data = response.json()
@@ -160,47 +169,51 @@ async def test_get_timesheets_by_employee(client: AsyncClient):
 async def test_get_timesheets_by_employee_and_date_range(client: AsyncClient):
     employee_id = uuid4()
     await client.post(
-        "/api/v1/timesheet/",
+        "/api/v1/timesheets/",
         json={
             "employee_id": str(employee_id),
-            "work_date": "2024-01-15",
+            "start_date": "2024-01-15",
+            "end_date": "2024-01-15",
             "hours": 8.0,
         },
     )
     await client.post(
-        "/api/v1/timesheet/",
+        "/api/v1/timesheets/",
         json={
             "employee_id": str(employee_id),
-            "work_date": "2024-01-20",
+            "start_date": "2024-01-20",
+            "end_date": "2024-01-20",
             "hours": 7.5,
         },
     )
 
     response = await client.get(
-        f"/api/v1/timesheet/employee/{employee_id}/period?start_date=2024-01-15&end_date=2024-01-15"
+        f"/api/v1/timesheets/employee/{employee_id}/period?start_date=2024-01-15&end_date=2024-01-15"
     )
 
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 1
-    assert data[0]["work_date"] == "2024-01-15"
+    assert data[0]["start_date"] == "2024-01-15"
+    assert data[0]["end_date"] == "2024-01-15"
 
 
 @pytest.mark.asyncio
 async def test_update_timesheet(client: AsyncClient):
     employee_id = uuid4()
     create_response = await client.post(
-        "/api/v1/timesheet/",
+        "/api/v1/timesheets/",
         json={
             "employee_id": str(employee_id),
-            "work_date": "2024-01-15",
+            "start_date": "2024-01-15",
+            "end_date": "2024-01-15",
             "hours": 8.0,
         },
     )
     timesheet_id = create_response.json()["id"]
 
     response = await client.put(
-        f"/api/v1/timesheet/{timesheet_id}",
+        f"/api/v1/timesheets/{timesheet_id}",
         json={
             "hours": 7.0,
             "overtime_hours": 1.0,
@@ -220,16 +233,17 @@ async def test_update_timesheet(client: AsyncClient):
 async def test_submit_timesheet(client: AsyncClient):
     employee_id = uuid4()
     create_response = await client.post(
-        "/api/v1/timesheet/",
+        "/api/v1/timesheets/",
         json={
             "employee_id": str(employee_id),
-            "work_date": "2024-01-15",
+            "start_date": "2024-01-15",
+            "end_date": "2024-01-15",
             "hours": 8.0,
         },
     )
     timesheet_id = create_response.json()["id"]
 
-    response = await client.post(f"/api/v1/timesheet/{timesheet_id}/submit")
+    response = await client.post(f"/api/v1/timesheets/{timesheet_id}/submit")
 
     assert response.status_code == 200
     data = response.json()
@@ -242,19 +256,20 @@ async def test_approve_timesheet(client: AsyncClient):
     employee_id = uuid4()
     approver_id = uuid4()
     create_response = await client.post(
-        "/api/v1/timesheet/",
+        "/api/v1/timesheets/",
         json={
             "employee_id": str(employee_id),
-            "work_date": "2024-01-15",
+            "start_date": "2024-01-15",
+            "end_date": "2024-01-15",
             "hours": 8.0,
         },
     )
     timesheet_id = create_response.json()["id"]
 
-    await client.post(f"/api/v1/timesheet/{timesheet_id}/submit")
+    await client.post(f"/api/v1/timesheets/{timesheet_id}/submit")
 
     response = await client.post(
-        f"/api/v1/timesheet/{timesheet_id}/approve",
+        f"/api/v1/timesheets/{timesheet_id}/approve",
         json={"approved_by": str(approver_id)},
     )
 
@@ -269,19 +284,20 @@ async def test_approve_timesheet(client: AsyncClient):
 async def test_reject_timesheet(client: AsyncClient):
     employee_id = uuid4()
     create_response = await client.post(
-        "/api/v1/timesheet/",
+        "/api/v1/timesheets/",
         json={
             "employee_id": str(employee_id),
-            "work_date": "2024-01-15",
+            "start_date": "2024-01-15",
+            "end_date": "2024-01-15",
             "hours": 8.0,
         },
     )
     timesheet_id = create_response.json()["id"]
 
-    await client.post(f"/api/v1/timesheet/{timesheet_id}/submit")
+    await client.post(f"/api/v1/timesheets/{timesheet_id}/submit")
 
     response = await client.post(
-        f"/api/v1/timesheet/{timesheet_id}/reject",
+        f"/api/v1/timesheets/{timesheet_id}/reject",
         json={"reason": "Hours do not match project requirements"},
     )
 
@@ -295,18 +311,19 @@ async def test_reject_timesheet(client: AsyncClient):
 async def test_get_pending_approval(client: AsyncClient):
     employee_id = uuid4()
     create_response = await client.post(
-        "/api/v1/timesheet/",
+        "/api/v1/timesheets/",
         json={
             "employee_id": str(employee_id),
-            "work_date": "2024-01-15",
+            "start_date": "2024-01-15",
+            "end_date": "2024-01-15",
             "hours": 8.0,
         },
     )
     timesheet_id = create_response.json()["id"]
 
-    await client.post(f"/api/v1/timesheet/{timesheet_id}/submit")
+    await client.post(f"/api/v1/timesheets/{timesheet_id}/submit")
 
-    response = await client.get("/api/v1/timesheet/pending-approval/list")
+    response = await client.get("/api/v1/timesheets/pending-approval/list")
 
     assert response.status_code == 200
     data = response.json()
@@ -320,33 +337,39 @@ async def test_sum_hours_in_interval(client: AsyncClient):
     approver_id = uuid4()
 
     ts1_response = await client.post(
-        "/api/v1/timesheet/",
+        "/api/v1/timesheets/",
         json={
             "employee_id": str(employee_id),
-            "work_date": "2024-01-15",
+            "start_date": "2024-01-15",
+            "end_date": "2024-01-15",
             "hours": 8.0,
         },
     )
     ts1_id = ts1_response.json()["id"]
-    await client.post(f"/api/v1/timesheet/{ts1_id}/submit")
-    await client.post(f"/api/v1/timesheet/{ts1_id}/approve", json={"approved_by": str(approver_id)})
+    await client.post(f"/api/v1/timesheets/{ts1_id}/submit")
+    await client.post(
+        f"/api/v1/timesheets/{ts1_id}/approve", json={"approved_by": str(approver_id)}
+    )
 
     ts2_response = await client.post(
-        "/api/v1/timesheet/",
+        "/api/v1/timesheets/",
         json={
             "employee_id": str(employee_id),
-            "work_date": "2024-01-16",
+            "start_date": "2024-01-16",
+            "end_date": "2024-01-16",
             "hours": 7.5,
             "overtime_hours": 1.5,
             "overtime_type": "regular",
         },
     )
     ts2_id = ts2_response.json()["id"]
-    await client.post(f"/api/v1/timesheet/{ts2_id}/submit")
-    await client.post(f"/api/v1/timesheet/{ts2_id}/approve", json={"approved_by": str(approver_id)})
+    await client.post(f"/api/v1/timesheets/{ts2_id}/submit")
+    await client.post(
+        f"/api/v1/timesheets/{ts2_id}/approve", json={"approved_by": str(approver_id)}
+    )
 
     response = await client.get(
-        f"/api/v1/timesheet/employee/{employee_id}/hours-summary?start_date=2024-01-15&end_date=2024-01-16"
+        f"/api/v1/timesheets/employee/{employee_id}/hours-summary?start_date=2024-01-15&end_date=2024-01-16"
     )
 
     assert response.status_code == 200
@@ -358,20 +381,21 @@ async def test_sum_hours_in_interval(client: AsyncClient):
 async def test_delete_timesheet(client: AsyncClient):
     employee_id = uuid4()
     create_response = await client.post(
-        "/api/v1/timesheet/",
+        "/api/v1/timesheets/",
         json={
             "employee_id": str(employee_id),
-            "work_date": "2024-01-15",
+            "start_date": "2024-01-15",
+            "end_date": "2024-01-15",
             "hours": 8.0,
         },
     )
     timesheet_id = create_response.json()["id"]
 
-    response = await client.delete(f"/api/v1/timesheet/{timesheet_id}")
+    response = await client.delete(f"/api/v1/timesheets/{timesheet_id}")
 
     assert response.status_code == 204
 
-    get_response = await client.get(f"/api/v1/timesheet/{timesheet_id}")
+    get_response = await client.get(f"/api/v1/timesheets/{timesheet_id}")
     assert get_response.status_code == 404
 
 
@@ -379,16 +403,17 @@ async def test_delete_timesheet(client: AsyncClient):
 async def test_cannot_delete_submitted_timesheet(client: AsyncClient):
     employee_id = uuid4()
     create_response = await client.post(
-        "/api/v1/timesheet/",
+        "/api/v1/timesheets/",
         json={
             "employee_id": str(employee_id),
-            "work_date": "2024-01-15",
+            "start_date": "2024-01-15",
+            "end_date": "2024-01-15",
             "hours": 8.0,
         },
     )
     timesheet_id = create_response.json()["id"]
-    await client.post(f"/api/v1/timesheet/{timesheet_id}/submit")
+    await client.post(f"/api/v1/timesheets/{timesheet_id}/submit")
 
-    response = await client.delete(f"/api/v1/timesheet/{timesheet_id}")
+    response = await client.delete(f"/api/v1/timesheets/{timesheet_id}")
 
     assert response.status_code == 400

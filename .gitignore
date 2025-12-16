@@ -42,3 +42,4 @@ frontend/dist/
 frontend/build/
 .ruff_cache
 reports/
+coverage.xml

@@ -44,7 +44,7 @@ async def test_create_payroll(client: AsyncClient):
 
     # Create payroll
     payroll_response = await client.post(
-        "/api/v1/payroll/",
+        "/api/v1/payrolls/",
         json={
             "employee_id": employee_id,
             "period_type": PayrollPeriodType.MONTHLY.value,
@@ -93,7 +93,7 @@ async def test_get_payroll(client: AsyncClient):
     await client.post(f"/api/v1/contracts/{contract_data['id']}/activate")
 
     payroll_response = await client.post(
-        "/api/v1/payroll/",
+        "/api/v1/payrolls/",
         json={
             "employee_id": employee_id,
             "period_type": PayrollPeriodType.MONTHLY.value,
@@ -104,7 +104,7 @@ async def test_get_payroll(client: AsyncClient):
     payroll_id = payroll_response.json()["id"]
 
     # Test: Get payroll
-    get_response = await client.get(f"/api/v1/payroll/{payroll_id}")
+    get_response = await client.get(f"/api/v1/payrolls/{payroll_id}")
 
     assert get_response.status_code == 200
     data = get_response.json()
@@ -116,7 +116,7 @@ async def test_get_payroll(client: AsyncClient):
 async def test_get_nonexistent_payroll(client: AsyncClient):
     """Test getting a non-existent payroll returns 404"""
     fake_id = str(uuid4())
-    response = await client.get(f"/api/v1/payroll/{fake_id}")
+    response = await client.get(f"/api/v1/payrolls/{fake_id}")
 
     assert response.status_code == 404
 
@@ -151,7 +151,7 @@ async def test_list_payrolls(client: AsyncClient):
         await client.post(f"/api/v1/contracts/{contract_data['id']}/activate")
 
         await client.post(
-            "/api/v1/payroll/",
+            "/api/v1/payrolls/",
             json={
                 "employee_id": employee_id,
                 "period_type": PayrollPeriodType.MONTHLY.value,
@@ -161,7 +161,7 @@ async def test_list_payrolls(client: AsyncClient):
         )
 
     # Test: List payrolls
-    response = await client.get("/api/v1/payroll/")
+    response = await client.get("/api/v1/payrolls/")
 
     assert response.status_code == 200
     data = response.json()
@@ -204,7 +204,7 @@ async def test_list_payrolls_by_employee(client: AsyncClient):
     # Create multiple payrolls for the same employee
     for month in range(1, 4):
         await client.post(
-            "/api/v1/payroll/",
+            "/api/v1/payrolls/",
             json={
                 "employee_id": employee_id,
                 "period_type": PayrollPeriodType.MONTHLY.value,
@@ -214,7 +214,7 @@ async def test_list_payrolls_by_employee(client: AsyncClient):
         )
 
     # Test: List payrolls by employee
-    response = await client.get(f"/api/v1/payroll/employee/{employee_id}")
+    response = await client.get(f"/api/v1/payrolls/employee/{employee_id}")
 
     assert response.status_code == 200
     data = response.json()
@@ -252,7 +252,7 @@ async def test_calculate_payroll(client: AsyncClient):
     await client.post(f"/api/v1/contracts/{contract_data['id']}/activate")
 
     payroll_response = await client.post(
-        "/api/v1/payroll/",
+        "/api/v1/payrolls/",
         json={
             "employee_id": employee_id,
             "period_type": PayrollPeriodType.MONTHLY.value,
@@ -264,12 +264,12 @@ async def test_calculate_payroll(client: AsyncClient):
 
     # Test: Calculate payroll
     calc_response = await client.post(
-        f"/api/v1/payroll/{payroll_id}/calculate", json={"working_days": 22}
+        f"/api/v1/payrolls/{payroll_id}/calculate", json={"working_days": 22}
     )
 
     assert calc_response.status_code == 200
     data = calc_response.json()
-    assert data["status"] == "DRAFT"
+    assert data["status"] == "PENDING_APPROVAL"
     assert float(data["gross_pay"]) == 8000.00
     assert float(data["net_pay"]) == 8000.00
     assert len(data["lines"]) >= 1
@@ -304,7 +304,7 @@ async def test_approve_payroll(client: AsyncClient):
     await client.post(f"/api/v1/contracts/{contract_data['id']}/activate")
 
     payroll_response = await client.post(
-        "/api/v1/payroll/",
+        "/api/v1/payrolls/",
         json={
             "employee_id": employee_id,
             "period_type": PayrollPeriodType.MONTHLY.value,
@@ -315,10 +315,10 @@ async def test_approve_payroll(client: AsyncClient):
     payroll_id = payroll_response.json()["id"]
 
     # Calculate
-    await client.post(f"/api/v1/payroll/{payroll_id}/calculate", json={"working_days": 22})
+    await client.post(f"/api/v1/payrolls/{payroll_id}/calculate", json={"working_days": 22})
 
     # Submit for approval first
-    get_response = await client.get(f"/api/v1/payroll/{payroll_id}")
+    get_response = await client.get(f"/api/v1/payrolls/{payroll_id}")
     get_response.json()
 
     # Manually submit for approval by updating status (not ideal but testing flow)
@@ -327,12 +327,14 @@ async def test_approve_payroll(client: AsyncClient):
     # Test: Approve payroll
     approver_id = str(uuid4())
     approve_response = await client.post(
-        f"/api/v1/payroll/{payroll_id}/approve", json={"approved_by": approver_id}
+        f"/api/v1/payrolls/{payroll_id}/approve", json={"approved_by": approver_id}
     )
 
-    # Note: This will fail because payroll needs to be in PENDING_APPROVAL status
-    # For now, we expect 400 error
-    assert approve_response.status_code == 400
+    # After calculation, payroll is in PENDING_APPROVAL status, so it can be approved
+    assert approve_response.status_code == 200
+    approve_data = approve_response.json()
+    assert approve_data["status"] == "APPROVED"
+    assert approve_data["approved_by"] == approver_id
 
 
 @pytest.mark.asyncio
@@ -366,7 +368,7 @@ async def test_payroll_workflow(client: AsyncClient):
 
     # Step 1: Create payroll
     payroll_response = await client.post(
-        "/api/v1/payroll/",
+        "/api/v1/payrolls/",
         json={
             "employee_id": employee_id,
             "period_type": PayrollPeriodType.MONTHLY.value,
@@ -380,11 +382,11 @@ async def test_payroll_workflow(client: AsyncClient):
 
     # Step 2: Calculate payroll
     calc_response = await client.post(
-        f"/api/v1/payroll/{payroll_id}/calculate", json={"working_days": 22}
+        f"/api/v1/payrolls/{payroll_id}/calculate", json={"working_days": 22}
     )
     assert calc_response.status_code == 200
     calc_data = calc_response.json()
-    assert calc_data["status"] == "DRAFT"
+    assert calc_data["status"] == "PENDING_APPROVAL"
     # Hourly: 22 days * 8 hours/day * $25 = $4400
     assert float(calc_data["gross_pay"]) == 4400.00
 
@@ -432,7 +434,7 @@ async def test_calculate_payroll_with_bonus(client: AsyncClient):
 
     # Create and calculate payroll
     payroll_response = await client.post(
-        "/api/v1/payroll/",
+        "/api/v1/payrolls/",
         json={
             "employee_id": employee_id,
             "period_type": PayrollPeriodType.MONTHLY.value,
@@ -443,7 +445,7 @@ async def test_calculate_payroll_with_bonus(client: AsyncClient):
     payroll_id = payroll_response.json()["id"]
 
     calc_response = await client.post(
-        f"/api/v1/payroll/{payroll_id}/calculate", json={"working_days": 22}
+        f"/api/v1/payrolls/{payroll_id}/calculate", json={"working_days": 22}
     )
 
     assert calc_response.status_code == 200
@@ -459,7 +461,7 @@ async def test_create_payroll_invalid_employee(client: AsyncClient):
     fake_employee_id = str(uuid4())
 
     response = await client.post(
-        "/api/v1/payroll/",
+        "/api/v1/payrolls/",
         json={
             "employee_id": fake_employee_id,
             "period_type": PayrollPeriodType.MONTHLY.value,
@@ -487,7 +489,7 @@ async def test_create_payroll_no_contract(client: AsyncClient):
 
     # Try to create payroll without contract
     response = await client.post(
-        "/api/v1/payroll/",
+        "/api/v1/payrolls/",
         json={
             "employee_id": employee_id,
             "period_type": PayrollPeriodType.MONTHLY.value,

@@ -27,7 +27,8 @@ describe('TimesheetList', () => {
     {
       id: 'timesheet-1',
       employee_id: 'employee-1',
-      work_date: '2025-12-01',
+      start_date: '2025-12-01',
+      end_date: '2025-12-01',
       hours: 8,
       overtime_hours: 2,
       overtime_type: OvertimeType.REGULAR,
@@ -45,7 +46,8 @@ describe('TimesheetList', () => {
     {
       id: 'timesheet-2',
       employee_id: 'employee-2',
-      work_date: '2025-12-02',
+      start_date: '2025-12-02',
+      end_date: '2025-12-02',
       hours: 8,
       overtime_hours: 0,
       overtime_type: null,
@@ -100,7 +102,7 @@ describe('TimesheetList', () => {
     render(<TimesheetList />)
 
     await waitFor(() => {
-      expect(screen.getByText('8h')).toBeInTheDocument()
+      expect(screen.getAllByText('8h').length).toBeGreaterThan(0)
       expect(screen.getByText('10h')).toBeInTheDocument()
       expect(screen.getByText('draft')).toBeInTheDocument()
       expect(screen.getByText('submitted')).toBeInTheDocument()

@@ -1,23 +1,19 @@
 import type { UserResponse } from '@/api/models'
+import { UserRole as ApiUserRole } from '@/api/models'
+
+// Re-export the API UserRole to maintain compatibility
+export { UserRole } from '@/api/models'
 
 export interface User {
   id: string
   email: string
   first_name: string
   last_name: string
-  role: UserRole
+  role: ApiUserRole
   employee_id?: string
   is_active: boolean
   created_at: string
   updated_at: string
-}
-
-export enum UserRole {
-  ADMIN = 'admin',
-  HR_MANAGER = 'hr_manager',
-  PAYROLL_SPECIALIST = 'payroll_specialist',
-  MANAGER = 'manager',
-  EMPLOYEE = 'employee',
 }
 
 export interface LoginCredentials {

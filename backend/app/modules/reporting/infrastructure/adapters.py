@@ -68,13 +68,11 @@ class ReportingDataAdapter:
             employee_name = f"{employee.first_name} {employee.last_name}" if employee else "Unknown"
 
             # Extract payroll summary data
-            gross_pay = f"${payroll.gross_pay_amount:,.2f}" if payroll.gross_pay_amount else "$0.00"
+            gross_pay = f"${payroll.gross_pay:,.2f}" if payroll.gross_pay else "$0.00"
             deductions = (
-                f"${payroll.total_deductions_amount:,.2f}"
-                if payroll.total_deductions_amount
-                else "$0.00"
+                f"${payroll.total_deductions:,.2f}" if payroll.total_deductions else "$0.00"
             )
-            net_pay = f"${payroll.net_pay_amount:,.2f}" if payroll.net_pay_amount else "$0.00"
+            net_pay = f"${payroll.net_pay:,.2f}" if payroll.net_pay else "$0.00"
             period = f"{payroll.period_start_date} to {payroll.period_end_date}"
 
             rows.append([employee_name, gross_pay, deductions, net_pay, period])
@@ -282,10 +280,8 @@ class ReportingDataAdapter:
                     "total_tax": Decimal("0"),
                 }
 
-            employee_taxes[payroll.employee_id]["gross"] += payroll.gross_pay_amount or Decimal("0")
-            employee_taxes[payroll.employee_id]["total_tax"] += (
-                payroll.total_taxes_amount or Decimal("0")
-            )
+            employee_taxes[payroll.employee_id]["gross"] += payroll.gross_pay or Decimal("0")
+            employee_taxes[payroll.employee_id]["total_tax"] += payroll.total_taxes or Decimal("0")
 
             # Try to extract federal/state tax breakdown from payroll lines
             for line in payroll.lines:

@@ -36,7 +36,8 @@ describe('TimesheetDetail', () => {
   const mockDraftTimesheet = {
     id: 'timesheet-1',
     employee_id: 'employee-1',
-    work_date: '2025-12-01',
+    start_date: '2025-12-01',
+    end_date: '2025-12-01',
     hours: 8,
     overtime_hours: 2,
     overtime_type: OvertimeType.REGULAR,
@@ -125,7 +126,7 @@ describe('TimesheetDetail', () => {
       expect(screen.getByText('8h')).toBeInTheDocument()
       expect(screen.getByText('2h')).toBeInTheDocument()
       expect(screen.getByText('10h')).toBeInTheDocument()
-      expect(screen.getByText('draft')).toBeInTheDocument()
+      expect(screen.getAllByText('draft').length).toBeGreaterThan(0)
       expect(screen.getByText('Development work')).toBeInTheDocument()
     })
   })
@@ -159,7 +160,7 @@ describe('TimesheetDetail', () => {
     render(<TimesheetDetail />)
 
     await waitFor(() => {
-      expect(screen.getByText('approved')).toBeInTheDocument()
+      expect(screen.getAllByText('approved').length).toBeGreaterThan(0)
       expect(screen.queryByText('Edit')).not.toBeInTheDocument()
       expect(screen.queryByText('Submit')).not.toBeInTheDocument()
       expect(screen.queryByText('Approve')).not.toBeInTheDocument()

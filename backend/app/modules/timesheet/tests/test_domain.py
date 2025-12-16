@@ -49,7 +49,7 @@ def test_time_entry_rejects_negative_overtime_hours():
 def test_create_timesheet(sample_employee_id, sample_time_entry):
     timesheet = Timesheet(
         employee_id=sample_employee_id,
-        work_date=date(2024, 1, 15),
+        initial_work_date=date(2024, 1, 15),
         time_entry=sample_time_entry,
         status=TimesheetStatus.DRAFT,
     )
@@ -121,7 +121,7 @@ def test_timesheet_total_hours(sample_timesheet_with_overtime):
 def test_timesheet_with_project_and_task(sample_employee_id, sample_time_entry, sample_project_id):
     timesheet = Timesheet(
         employee_id=sample_employee_id,
-        work_date=date(2024, 1, 15),
+        initial_work_date=date(2024, 1, 15),
         time_entry=sample_time_entry,
         project_id=sample_project_id,
         task_description="Implemented user authentication",

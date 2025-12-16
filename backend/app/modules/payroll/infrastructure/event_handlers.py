@@ -8,7 +8,10 @@ from app.modules.payroll.application.commands import CreatePayrollCommand
 from app.modules.payroll.application.handlers import CreatePayrollHandler
 from app.modules.payroll.domain.services import PayrollCalculationService, PayrollPeriodService
 from app.modules.payroll.domain.value_objects import PayrollPeriod, PayrollPeriodType
-from app.modules.payroll.infrastructure.adapters import PayrollDataGatheringAdapter
+from app.modules.payroll.infrastructure.adapters import (
+    PayrollDataGatheringAdapter,
+    PayrollValidationAdapter,
+)
 from app.modules.payroll.infrastructure.repository import SQLAlchemyPayrollRepository
 from app.shared.infrastructure.event_registry import EventHandlerRegistry
 
@@ -93,11 +96,14 @@ class PayrollEventHandler:
 
                             # Create payroll
                             repository = SQLAlchemyPayrollRepository(session)
-                            create_handler = CreatePayrollHandler(repository)
+                            validation_adapter = PayrollValidationAdapter(session)
+                            create_handler = CreatePayrollHandler(repository, validation_adapter)
 
                             command = CreatePayrollCommand(
                                 employee_id=employee_id,
-                                period=period,
+                                period_type=period.period_type,
+                                period_start_date=period.start_date,
+                                period_end_date=period.end_date,
                                 notes=f"Auto-generated for {year}-{month:02d}",
                             )
 

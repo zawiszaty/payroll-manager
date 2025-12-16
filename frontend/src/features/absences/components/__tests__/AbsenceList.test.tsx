@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AbsenceList } from '../AbsenceList'
 import { absencesApi } from '@/api/absences'
+import { AbsenceType, AbsenceStatus } from '@/features/absences/types'
 
 vi.mock('@/api/absences')
 
@@ -39,10 +40,10 @@ describe('AbsenceList', () => {
         {
           id: '1',
           employee_id: 'emp-1',
-          absence_type: 'vacation' as const,
+          absence_type: AbsenceType.VACATION,
           start_date: '2024-01-01',
           end_date: '2024-01-05',
-          status: 'pending' as const,
+          status: AbsenceStatus.PENDING,
           reason: 'Family vacation',
         },
       ],

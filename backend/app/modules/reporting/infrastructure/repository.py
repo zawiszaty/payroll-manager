@@ -115,6 +115,7 @@ class SQLAlchemyReportRepository(ReportRepository):
         orm = self._to_orm(report)
         merged_orm = await self.session.merge(orm)
         await self.session.flush()
+        await self._dispatch_events(report)
         await self.session.refresh(merged_orm)
         return self._to_domain(merged_orm)
 

@@ -25,7 +25,7 @@ async def test_get_timesheet(test_session: AsyncSession):
     time_entry = TimeEntry(hours=8.0, overtime_hours=0.0, overtime_type=None)
     timesheet = Timesheet(
         employee_id=employee_id,
-        work_date=date(2024, 1, 15),
+        initial_work_date=date(2024, 1, 15),
         time_entry=time_entry,
         status=TimesheetStatus.DRAFT,
     )
@@ -61,7 +61,7 @@ async def test_get_timesheets_by_employee(test_session: AsyncSession):
     time_entry1 = TimeEntry(hours=8.0, overtime_hours=0.0, overtime_type=None)
     timesheet1 = Timesheet(
         employee_id=employee_id,
-        work_date=date(2024, 1, 15),
+        initial_work_date=date(2024, 1, 15),
         time_entry=time_entry1,
         status=TimesheetStatus.DRAFT,
     )
@@ -70,7 +70,7 @@ async def test_get_timesheets_by_employee(test_session: AsyncSession):
     time_entry2 = TimeEntry(hours=7.5, overtime_hours=0.0, overtime_type=None)
     timesheet2 = Timesheet(
         employee_id=employee_id,
-        work_date=date(2024, 1, 16),
+        initial_work_date=date(2024, 1, 16),
         time_entry=time_entry2,
         status=TimesheetStatus.DRAFT,
     )
@@ -94,7 +94,7 @@ async def test_get_approved_timesheets_in_period(test_session: AsyncSession):
     time_entry = TimeEntry(hours=8.0, overtime_hours=0.0, overtime_type=None)
     timesheet1 = Timesheet(
         employee_id=employee_id,
-        work_date=date(2024, 1, 15),
+        initial_work_date=date(2024, 1, 15),
         time_entry=time_entry,
         status=TimesheetStatus.DRAFT,
     )
@@ -104,7 +104,7 @@ async def test_get_approved_timesheets_in_period(test_session: AsyncSession):
 
     timesheet2 = Timesheet(
         employee_id=employee_id,
-        work_date=date(2024, 1, 16),
+        initial_work_date=date(2024, 1, 16),
         time_entry=time_entry,
         status=TimesheetStatus.DRAFT,
     )
@@ -130,7 +130,7 @@ async def test_sum_hours_in_interval(test_session: AsyncSession):
     time_entry1 = TimeEntry(hours=8.0, overtime_hours=0.0, overtime_type=None)
     timesheet1 = Timesheet(
         employee_id=employee_id,
-        work_date=date(2024, 1, 15),
+        initial_work_date=date(2024, 1, 15),
         time_entry=time_entry1,
         status=TimesheetStatus.DRAFT,
     )
@@ -141,7 +141,7 @@ async def test_sum_hours_in_interval(test_session: AsyncSession):
     time_entry2 = TimeEntry(hours=7.5, overtime_hours=1.5, overtime_type=OvertimeType.REGULAR)
     timesheet2 = Timesheet(
         employee_id=employee_id,
-        work_date=date(2024, 1, 16),
+        initial_work_date=date(2024, 1, 16),
         time_entry=time_entry2,
         status=TimesheetStatus.DRAFT,
     )
@@ -166,7 +166,7 @@ async def test_get_timesheet_summary(test_session: AsyncSession):
     time_entry1 = TimeEntry(hours=8.0, overtime_hours=0.0, overtime_type=None)
     timesheet1 = Timesheet(
         employee_id=employee_id,
-        work_date=date(2024, 1, 15),
+        initial_work_date=date(2024, 1, 15),
         time_entry=time_entry1,
         status=TimesheetStatus.DRAFT,
     )
@@ -177,7 +177,7 @@ async def test_get_timesheet_summary(test_session: AsyncSession):
     time_entry2 = TimeEntry(hours=7.5, overtime_hours=0.0, overtime_type=None)
     timesheet2 = Timesheet(
         employee_id=employee_id,
-        work_date=date(2024, 1, 16),
+        initial_work_date=date(2024, 1, 16),
         time_entry=time_entry2,
         status=TimesheetStatus.DRAFT,
     )

@@ -13,7 +13,7 @@ class AbsenceCreatedEvent(DomainEvent):
     employee_id: UUID
     absence_type: str
     start_date: date
-    end_date: date
+    end_date: date | None
     reason: str | None
     status: str
 
@@ -25,7 +25,7 @@ class AbsenceApprovedEvent(DomainEvent):
     employee_id: UUID
     absence_type: str
     start_date: date
-    end_date: date
+    end_date: date | None
     approved_by: UUID | None
 
 
@@ -36,7 +36,7 @@ class AbsenceRejectedEvent(DomainEvent):
     employee_id: UUID
     absence_type: str
     start_date: date
-    end_date: date
+    end_date: date | None
     rejected_by: UUID | None
 
 
@@ -47,6 +47,6 @@ class AbsenceCancelledEvent(DomainEvent):
     employee_id: UUID
     absence_type: str
     start_date: date
-    end_date: date
+    end_date: date | None
     was_approved: bool
     cancelled_by: UUID | None

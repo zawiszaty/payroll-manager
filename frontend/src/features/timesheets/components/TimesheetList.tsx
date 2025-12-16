@@ -112,7 +112,11 @@ export function TimesheetList() {
                   <TableCell className="font-medium">
                     {timesheet.employee_id.substring(0, 8)}...
                   </TableCell>
-                  <TableCell>{formatDate(timesheet.work_date)}</TableCell>
+                  <TableCell>
+                    {timesheet.start_date === timesheet.end_date
+                      ? formatDate(timesheet.start_date)
+                      : `${formatDate(timesheet.start_date)} - ${formatDate(timesheet.end_date)}`}
+                  </TableCell>
                   <TableCell>{timesheet.hours}h</TableCell>
                   <TableCell>
                     {timesheet.overtime_hours > 0 ? (
@@ -185,7 +189,10 @@ export function TimesheetList() {
             <DialogTitle>Delete Timesheet</DialogTitle>
             <DialogDescription>
               Are you sure you want to delete this timesheet entry for{' '}
-              {deleteDialog.timesheet?.work_date}? This action cannot be undone.
+              {deleteDialog.timesheet?.start_date === deleteDialog.timesheet?.end_date
+                ? formatDate(deleteDialog.timesheet?.start_date || '')
+                : `${formatDate(deleteDialog.timesheet?.start_date || '')} - ${formatDate(deleteDialog.timesheet?.end_date || '')}`}
+              ? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

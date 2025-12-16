@@ -40,3 +40,18 @@ global.ResizeObserver = class ResizeObserver {
   observe() {}
   unobserve() {}
 } as any
+
+// Mock pointer capture methods for Radix UI Select
+if (!Element.prototype.hasPointerCapture) {
+  Element.prototype.hasPointerCapture = function () {
+    return false
+  }
+}
+
+if (!Element.prototype.setPointerCapture) {
+  Element.prototype.setPointerCapture = function () {}
+}
+
+if (!Element.prototype.releasePointerCapture) {
+  Element.prototype.releasePointerCapture = function () {}
+}

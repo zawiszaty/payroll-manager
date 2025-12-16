@@ -40,7 +40,7 @@ def sample_time_entry_with_overtime():
 def sample_timesheet(sample_employee_id, sample_time_entry):
     return Timesheet(
         employee_id=sample_employee_id,
-        work_date=date(2024, 1, 15),
+        initial_work_date=date(2024, 1, 15),
         time_entry=sample_time_entry,
         status=TimesheetStatus.DRAFT,
     )
@@ -50,7 +50,7 @@ def sample_timesheet(sample_employee_id, sample_time_entry):
 def sample_timesheet_with_overtime(sample_employee_id, sample_time_entry_with_overtime):
     return Timesheet(
         employee_id=sample_employee_id,
-        work_date=date(2024, 1, 16),
+        initial_work_date=date(2024, 1, 16),
         time_entry=sample_time_entry_with_overtime,
         status=TimesheetStatus.DRAFT,
     )
@@ -60,7 +60,7 @@ def sample_timesheet_with_overtime(sample_employee_id, sample_time_entry_with_ov
 def submitted_timesheet(sample_employee_id, sample_time_entry):
     timesheet = Timesheet(
         employee_id=sample_employee_id,
-        work_date=date(2024, 1, 17),
+        initial_work_date=date(2024, 1, 17),
         time_entry=sample_time_entry,
         status=TimesheetStatus.DRAFT,
     )

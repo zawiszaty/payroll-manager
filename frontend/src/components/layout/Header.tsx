@@ -38,7 +38,7 @@ export function Header() {
       <div className="flex h-16 items-center justify-between px-6">
         <div className="flex items-center gap-4">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Welcome, {user?.first_name}
+            Welcome, {user?.full_name}
           </h2>
         </div>
 
@@ -52,13 +52,10 @@ export function Header() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white">
-                  {user?.first_name?.[0]}
-                  {user?.last_name?.[0]}
+                  {user?.full_name?.[0]}
                 </div>
                 <div className="text-left">
-                  <p className="text-sm font-medium">
-                    {user?.first_name} {user?.last_name}
-                  </p>
+                  <p className="text-sm font-medium">{user?.full_name}</p>
                   <p className="text-xs text-gray-500">{user?.role}</p>
                 </div>
               </Button>

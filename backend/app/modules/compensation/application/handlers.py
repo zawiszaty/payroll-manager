@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import List
 
 from app.modules.compensation.application.commands import (
@@ -67,7 +68,7 @@ class CreateRateHandler:
             rate_id=saved_rate.id,
             employee_id=saved_rate.employee_id,
             rate_type=saved_rate.rate_type.value,
-            amount=saved_rate.amount.amount if saved_rate.amount else 0,
+            amount=saved_rate.amount.amount if saved_rate.amount else Decimal("0"),
             currency=saved_rate.amount.currency if saved_rate.amount else "USD",
             valid_from=saved_rate.date_range.valid_from
             if saved_rate.date_range
@@ -132,7 +133,7 @@ class CreateBonusHandler:
             bonus_id=saved_bonus.id,
             employee_id=saved_bonus.employee_id,
             bonus_type=saved_bonus.bonus_type.value,
-            amount=saved_bonus.amount.amount if saved_bonus.amount else 0,
+            amount=saved_bonus.amount.amount if saved_bonus.amount else Decimal("0"),
             currency=saved_bonus.amount.currency if saved_bonus.amount else "USD",
             payment_date=saved_bonus.payment_date,
         )
@@ -187,7 +188,7 @@ class CreateDeductionHandler:
             deduction_id=saved_deduction.id,
             employee_id=saved_deduction.employee_id,
             deduction_type=saved_deduction.deduction_type.value,
-            amount=saved_deduction.amount.amount if saved_deduction.amount else 0,
+            amount=saved_deduction.amount.amount if saved_deduction.amount else Decimal("0"),
             currency=saved_deduction.amount.currency if saved_deduction.amount else "USD",
             valid_from=saved_deduction.date_range.valid_from
             if saved_deduction.date_range

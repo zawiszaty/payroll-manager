@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import InitVar, dataclass, field
 from datetime import date
 from uuid import UUID, uuid4
 
@@ -11,9 +11,9 @@ from app.modules.timesheet.domain.value_objects import (
 @dataclass
 class Timesheet:
     employee_id: UUID
-    start_date: date
-    end_date: date
     time_entry: TimeEntry
+    start_date: date | None = None
+    end_date: date | None = None
     project_id: UUID | None = None
     task_description: str | None = None
     status: TimesheetStatus = TimesheetStatus.DRAFT
@@ -24,10 +24,20 @@ class Timesheet:
     submitted_at: date | None = None
     approved_at: date | None = None
     approved_by: UUID | None = None
+    initial_work_date: InitVar[date | None] = None
 
-    def __post_init__(self) -> None:
-        if self.end_date < self.start_date:
+    def __post_init__(self, initial_work_date: date | None) -> None:
+        resolved_start = initial_work_date or self.start_date
+        resolved_end = initial_work_date or self.end_date
+
+        if resolved_start is None or resolved_end is None:
+            raise ValueError("Timesheet requires a start_date/end_date or work_date")
+
+        if resolved_end < resolved_start:
             raise ValueError("End date must be after or equal to start date")
+
+        object.__setattr__(self, "start_date", resolved_start)
+        object.__setattr__(self, "end_date", resolved_end)
 
     def submit(self) -> None:
         if self.status != TimesheetStatus.DRAFT:
@@ -77,3 +87,9 @@ class Timesheet:
     @property
     def overtime_hours(self) -> float:
         return self.time_entry.overtime_hours
+
+    @property
+    def work_date(self) -> date:
+        if self.start_date is None:
+            raise ValueError("Timesheet start_date is not set")
+        return self.start_date

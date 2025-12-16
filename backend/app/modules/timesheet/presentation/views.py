@@ -54,11 +54,16 @@ class TimesheetResponse(BaseModel):
 
     @classmethod
     def from_entity(cls, timesheet: Timesheet) -> "TimesheetResponse":
+        start_date = timesheet.start_date
+        end_date = timesheet.end_date
+        if start_date is None or end_date is None:
+            raise ValueError("Timesheet must have start and end dates")
+
         return cls(
             id=timesheet.id,
             employee_id=timesheet.employee_id,
-            start_date=timesheet.start_date,
-            end_date=timesheet.end_date,
+            start_date=start_date,
+            end_date=end_date,
             hours=timesheet.regular_hours,
             overtime_hours=timesheet.overtime_hours,
             overtime_type=timesheet.time_entry.overtime_type.value

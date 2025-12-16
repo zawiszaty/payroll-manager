@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { absencesApi } from '../absences'
 import apiClient from '../client'
+import { AbsenceType, AbsenceStatus } from '@/features/absences/types'
 
 vi.mock('../client')
 
@@ -37,10 +38,10 @@ describe('absencesApi', () => {
       const mockAbsence = {
         id: '1',
         employee_id: 'emp-1',
-        absence_type: 'vacation',
+        absence_type: AbsenceType.VACATION,
         start_date: '2024-01-01',
         end_date: '2024-01-05',
-        status: 'pending',
+        status: AbsenceStatus.PENDING,
       }
       vi.mocked(apiClient.get).mockResolvedValue({ data: mockAbsence })
 
@@ -55,14 +56,14 @@ describe('absencesApi', () => {
     it('should create a new absence', async () => {
       const mockRequest = {
         employee_id: 'emp-1',
-        absence_type: 'vacation' as const,
+        absence_type: AbsenceType.VACATION,
         start_date: '2024-01-01',
         end_date: '2024-01-05',
       }
       const mockResponse = {
         id: '1',
         ...mockRequest,
-        status: 'pending' as const,
+        status: AbsenceStatus.PENDING,
       }
       vi.mocked(apiClient.post).mockResolvedValue({ data: mockResponse })
 
@@ -77,7 +78,7 @@ describe('absencesApi', () => {
     it('should approve an absence', async () => {
       const mockResponse = {
         id: '1',
-        status: 'approved',
+        status: AbsenceStatus.APPROVED,
       }
       vi.mocked(apiClient.post).mockResolvedValue({ data: mockResponse })
 
@@ -92,7 +93,7 @@ describe('absencesApi', () => {
     it('should reject an absence', async () => {
       const mockResponse = {
         id: '1',
-        status: 'rejected',
+        status: AbsenceStatus.REJECTED,
       }
       vi.mocked(apiClient.post).mockResolvedValue({ data: mockResponse })
 
@@ -107,7 +108,7 @@ describe('absencesApi', () => {
     it('should cancel an absence', async () => {
       const mockResponse = {
         id: '1',
-        status: 'cancelled',
+        status: AbsenceStatus.CANCELLED,
       }
       vi.mocked(apiClient.post).mockResolvedValue({ data: mockResponse })
 

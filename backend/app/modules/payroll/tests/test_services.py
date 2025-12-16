@@ -60,6 +60,7 @@ class TestPayrollCalculationService:
             },
             bonuses=[],
             absences=[],
+            timesheets=[],
         )
         mock_adapter.gather_all_payroll_data.return_value = payroll_data
         mock_adapter.calculate_absence_impact.return_value = AbsenceImpact(
@@ -100,6 +101,7 @@ class TestPayrollCalculationService:
             },
             bonuses=[],
             absences=[],
+            timesheets=[],
         )
         mock_adapter.gather_all_payroll_data.return_value = payroll_data
         mock_adapter.calculate_absence_impact.return_value = AbsenceImpact(
@@ -156,6 +158,7 @@ class TestPayrollCalculationService:
             },
             bonuses=[bonus_view],
             absences=[],
+            timesheets=[],
         )
         mock_adapter.gather_all_payroll_data.return_value = payroll_data
         mock_adapter.calculate_absence_impact.return_value = AbsenceImpact(
@@ -194,6 +197,7 @@ class TestPayrollCalculationService:
             },
             bonuses=[],
             absences=["some_absence"],  # Presence of absence triggers deduction calculation
+            timesheets=[],
         )
         mock_adapter.gather_all_payroll_data.return_value = payroll_data
 
@@ -251,6 +255,7 @@ class TestPayrollCalculationService:
             },
             bonuses=[bonus_view],
             absences=["absence"],
+            timesheets=[],
         )
         mock_adapter.gather_all_payroll_data.return_value = payroll_data
         mock_adapter.calculate_absence_impact.return_value = AbsenceImpact(
@@ -300,7 +305,7 @@ class TestPayrollCalculationService:
 
         # Setup mock data with empty contract (which will be None when checked)
         payroll_data = PayrollDataCollection(
-            employee=None, contract_data={}, bonuses=[], absences=[]
+            employee=None, contract_data={}, bonuses=[], absences=[], timesheets=[]
         )
         mock_adapter.gather_all_payroll_data.return_value = payroll_data
 
@@ -332,6 +337,7 @@ class TestPayrollCalculationService:
             },
             bonuses=[],
             absences=["absence"],  # Has absences but all paid
+            timesheets=[],
         )
         mock_adapter.gather_all_payroll_data.return_value = payroll_data
         mock_adapter.calculate_absence_impact.return_value = AbsenceImpact(
@@ -368,6 +374,7 @@ class TestPayrollCalculationService:
             },
             bonuses=[],
             absences=["absence"],
+            timesheets=[],
         )
         mock_adapter.gather_all_payroll_data.return_value = payroll_data
 

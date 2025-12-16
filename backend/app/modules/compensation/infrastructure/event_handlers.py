@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from typing import Any
 
 from app.modules.audit.domain.events import AuditLogCreatedEvent
@@ -30,6 +31,8 @@ class CompensationEventHandler:
                     if event_data.get("valid_to")
                     else None,
                 },
+                changed_by=None,
+                occurred_at=datetime.utcnow(),
                 metadata={
                     "event_type": "RateCreatedEvent",
                     "rate_type": event_data["rate_type"],
@@ -54,6 +57,8 @@ class CompensationEventHandler:
                     "currency": event_data["currency"],
                     "payment_date": event_data["payment_date"].isoformat(),
                 },
+                changed_by=None,
+                occurred_at=datetime.utcnow(),
                 metadata={
                     "event_type": "BonusCreatedEvent",
                     "bonus_type": event_data["bonus_type"],
@@ -81,6 +86,8 @@ class CompensationEventHandler:
                     if event_data.get("valid_to")
                     else None,
                 },
+                changed_by=None,
+                occurred_at=datetime.utcnow(),
                 metadata={
                     "event_type": "DeductionCreatedEvent",
                     "deduction_type": event_data["deduction_type"],
@@ -109,6 +116,8 @@ class CompensationEventHandler:
                     if event_data.get("valid_to")
                     else None,
                 },
+                changed_by=None,
+                occurred_at=datetime.utcnow(),
                 metadata={
                     "event_type": "OvertimeCreatedEvent",
                 },
@@ -134,6 +143,8 @@ class CompensationEventHandler:
                     if event_data.get("valid_to")
                     else None,
                 },
+                changed_by=None,
+                occurred_at=datetime.utcnow(),
                 metadata={
                     "event_type": "SickLeaveCreatedEvent",
                 },
